@@ -1,0 +1,103 @@
+% !TEX ../report.tex
+
+%---------------------------------------------------------------------------
+% CONFIG
+%---------------------------------------------------------------------------
+
+\newcommand{\institutionlogo}{logo_hesso}
+\newcommand{\institutionlogowidth}{200px}
+\newcommand{\institution}{}
+\newcommand{\titleaboveone}{Mobile (MobOp)}
+\newcommand{\titleabovetwo}{Mini projet}
+\newcommand{\subtitle}{Passwords at your fingertips}
+\newcommand{\logo}{logo.png}
+\newcommand{\logowidth}{200px}
+
+% \newcommand{\auteurs}{
+%  \emph{Auteur~:}  Lucy \textsc{Linder}
+%       %Second author ~\\[0.2cm]
+% }
+
+% ~ use this for multiple authors
+\newcommand{\auteurs}{
+\emph{Auteurs~:} \\[0.4cm]
+     Lucy \textsc{Linder} ~\\[0.2cm]
+     Magali \textsc{Froehlich} 
+}
+
+% \newcommand{\profs}{}
+%~ use this for professors:
+\newcommand{\profs}{
+\emph{Professeur~:} \\[0.4cm]
+     Pascal \textsc{Bruegger} ~\\[0.2cm]
+     %Second prof ~\\[0.2cm]
+}
+
+
+%----------------------------------------------------------------------------
+% TITLE 
+%----------------------------------------------------------------------------
+
+\newcommand{\HRule}[1]{\rule{\linewidth}{#1}}  
+
+\newcommand{\lltitlepage}{
+	\begin{titlepage}	
+    \center
+    %--- institution logo and name
+    \begin{flushright}
+    \ifdefempty{\institutionlogowidth}{
+    	\includegraphics{\institutionlogo}
+    }{
+    	\includegraphics[width=\institutionlogowidth]{\institutionlogo}
+    }
+    \end{flushright}
+    \ifdefempty{\institution}{~}{\textsc{\large \institution}} \\[2cm]
+    %--- above the title: course name for example
+    \ifdefempty{\titleaboveone}{}{\textsc{\Large \titleaboveone} ~\\[0.5cm]} 
+    \ifdefempty{\titleabovetwo}{}{\textsc{\titleabovetwo} ~\\[0.5cm]} 
+
+    %---  title inside rules
+    \HRule{0.5mm} 
+    \\[0.4cm]
+    {\huge \bfseries \thetitle} % title
+    \\[0.3cm] 
+    \ifdefempty{\subtitle}{}{{\Large \subtitle}\\[0.3cm]} % subtitle
+    \HRule{0.6mm} 
+                
+    % --- logo
+    \ifdefempty{\logo}{}{
+    	~\\[1cm]
+    	\ifdefempty{\logowidth}{
+			\includegraphics{\logo}   		
+    	}{
+			\includegraphics[width=\logowidth]{\logo}
+    	}
+    	\vfill
+    }
+
+    
+    \ifdefempty{\profs}{
+    	\begin{center} \large
+    		\auteurs 
+    	\end{center} 
+    }{
+	    % --- author(s) on the left
+	    \begin{minipage}[t]{0.4\textwidth}
+	    \begin{flushleft} \large
+	     \auteurs     
+	    \end{flushleft}
+	    \end{minipage}
+	    ~ % --- prof name on the right
+	    \begin{minipage}[t]{0.4\textwidth} 
+	    \begin{flushright} \large
+	    	\profs
+	    \end{flushright}
+	    \end{minipage}
+	}
+    \vfill
+    \thedate
+    ~\\[2cm]
+    
+    \setcounter{page}{1}
+	\end{titlepage}
+} % end title command

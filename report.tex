@@ -1,0 +1,91 @@
+\documentclass[a4paper,11pt]{article}
+
+%~ language : load french support
+\usepackage[frenchb]{babel} 
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc} 
+
+\input{config/header.tex}
+
+\setcounter{secnumdepth}{4} % allows 4 numbered subsections 
+% it is possible to use \paragraph for the 4th level
+
+\newcommand{\easypass}{\emph{EasyPass}}
+% --------------------------------------------------------------------------
+% META
+% --------------------------------------------------------------------------
+
+%~ include title page command \lltitlepage
+\usepackage{titling} % to have thetitle, theauthor, thedate available
+\input{config/title_page.tex} % include the title page
+
+%~ metas
+\title{EasyPass} % TODO
+\author{Lucy Linder}
+\date{01.01.2018} % TODO
+
+%~ logo of the school in filigrane
+\usepackage{wallpaper}
+\newcommand{\llwallpaper}{filigrane-mse.pdf}
+%~ use 
+
+% --------------------------------------------------------------------------
+% HEADER/FOOTER
+% --------------------------------------------------------------------------
+
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+
+\newcommand{\instutionfooter}{Master MSE}
+
+%~ header/footer
+\pagestyle{fancy}
+\fancyhead{} % reset
+%~ use this for headrule
+%\renewcommand{\headrulewidth}{0pt}
+%~ use this to have the name of the section in the header
+%\fancyhead[RO,LE]{\slshape \leftmark} 
+%~ use this to have the name of the document in the header
+\makeatletter
+\let\runauthor\@author
+\let\runtitle\@title
+\makeatother
+\fancyhead[RO,LE]{\runauthor, \runtitle} 
+
+\fancyfoot{} % reset
+\renewcommand{\footrulewidth}{0.1pt}
+\fancyfoot[L]{\small\itshape{\instutionfooter}}
+\fancyfoot[R]{\thepage\  / \pageref{LastPage}}
+
+% --------------------------------------------------------------------------
+% TOC
+% --------------------------------------------------------------------------
+
+%~ toc
+\usepackage{tocloft}
+%~ change toc title (with babel french package)
+\addto\captionsfrench{\renewcommand\contentsname{Table of Contents}}
+
+% --------------------------------------------------------------------------
+% CONTENT
+% --------------------------------------------------------------------------
+
+\begin{document} 
+% --- title page
+\lltitlepage
+
+
+%--- toc
+\tableofcontents
+\thispagestyle{empty}
+\newpage
+
+% ------------------------------------ document
+\ULCornerWallPaper{1}{\llwallpaper}
+\input{parties/introduction.tex}
+\input{parties/analyse.tex}
+\input{parties/conception.tex}
+\input{parties/implementation.tex}
+
+\end{document}
+

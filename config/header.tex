@@ -1,0 +1,141 @@
+% !TEX ../report.tex
+
+%~ paper and margins
+\usepackage[tmargin=2.2cm,bmargin=2.2cm,lmargin=2cm,rmargin=2cm]{geometry}
+\setlength{\parindent}{0pt} % no indent
+\setlength{\parskip}{\baselineskip} % bare line between paragraphs
+\setlength{\baselineskip}{2.5pt}
+
+%~ section headings : decrease the spaces above and below
+\usepackage{titlesec}
+\titlespacing\section{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
+\titlespacing\subsection{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
+\titlespacing\subsubsection{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
+
+%~ add default spaces between items in lists
+\usepackage{enumitem}
+\setitemize{itemsep=3pt}
+
+
+% hyperref setup
+\usepackage[colorlinks=true,urlcolor=blue!30!black,linkcolor=blue!30!black,urlbordercolor={1 0 0},pdfborder=0]{hyperref}
+
+%~ graphics
+\usepackage{graphicx} % for images
+\graphicspath{{resources/}}
+\usepackage{float}
+
+
+%~ other really useful packages
+\usepackage{tabularx}
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage[usenames,dvipsnames,svgnames,table]{xcolor}
+
+% --------------------------------------------------------------------------
+% ADDITIONAL PACKAGES
+% --------------------------------------------------------------------------
+
+%~landscape support
+\usepackage{pdflscape}
+
+% --------------------------------------------------------------------------
+% TABLES
+% --------------------------------------------------------------------------
+
+\usepackage{array}
+\usepackage{booktabs}
+
+\renewcommand{\arraystretch}{1.2} % more space between rows 
+
+%~ cellhead{align}{text}
+\newcommand{\cellhead}[2]{\multicolumn{1}{#1}{\textbf{#2}}}
+
+%~ use dotted or dash lines instead of solid ones
+\usepackage{arydshln}
+\setlength\dashlinedash{1pt}
+\setlength\dashlinegap{1pt}
+\setlength\arrayrulewidth{0.5pt}
+\definecolor{light-gray}{gray}{0.92}
+%~ \grayrule
+\newcommand{\grayrule}{\arrayrulecolor{light-gray}\hdashline\arrayrulecolor{black}}
+
+% --------------------------------------------------------------------------
+% MINTED
+% --------------------------------------------------------------------------
+   
+ \usepackage[outputdir="out"]{minted}
+ \usemintedstyle{github}
+ 
+ \newminted{prolog}{
+     fontsize=\small, 
+     xleftmargin=2mm,
+     breaklines
+ }
+ 
+ \newminted{text}{
+     fontsize=\small, 
+     xleftmargin=2mm,
+     breaklines
+ }
+ 
+ \newminted{java}{ 
+      xrightmargin=2mm, 
+      xleftmargin=2mm, 
+      bgcolor=white,
+      fontsize=\small
+ }
+ 
+ % repeat the command, since the minted package changes that
+ \makeatletter 
+ \renewcommand\verbatim@font{\footnotesize\ttfamily\color{black}}
+ \makeatother
+ 
+% --------------------------------------------------------------------------
+% COMMANDS
+% --------------------------------------------------------------------------
+
+%~ \begin{dotitemize} 
+%~ bulleted list 
+\newcommand{\sbt}{\,\begin{picture}(-1,1)(-1,-3)\circle*{2.3}\end{picture}\ }
+\newenvironment{dotitemize}{ 
+    \begin{list}{$\sbt$}{
+        \setlength\itemsep{2pt}
+        \setlength\parindent{2pt}
+        \setlength\labelsep{13pt}
+    }
+}{\end{list}}
+
+
+%~ include a figure, centered, with caption and label
+%~ usage : \includeFigure{percentage of textwidth}{path}{caption}
+%~ requires \usepackage{float}
+\newcommand{\includeFigure}[3]{
+    \begin{figure}[H]
+    \centering
+    \includegraphics[width=#1\textwidth]{#2}
+    \caption{#3}
+    \label{fig:#2}
+    \end{figure}
+}
+
+%~ \code[text]
+%~ text in monospace font
+\newcommand{\code}[1]{{\small\texttt{#1}\normalsize}}
+
+
+%~ \guillemets[text] 
+%~ enclose the text between french quotes
+%\newcommand{\guillemets}[1]{\og#1\fg{}}
+%~ enclose the texte between english quotes
+\newcommand{\guillemets}[1]{``#1''}
+
+%~ \begin{notepar}{title}
+%~ \end{notepar}
+%~ source: http://mirror.switch.ch/ftp/mirror/tex/macros/latex/contrib/tcolorbox/tcolorbox.pdf
+\usepackage{tcolorbox}
+\definecolor{light-gray}{gray}{0.85}
+\definecolor{dark-gray}{gray}{0.10}
+\newenvironment{notepar}[1]% 
+  {\begin{tcolorbox}[title={#1},colback=white,colframe=light-gray,coltext=dark-gray,coltitle=dark-gray,fonttitle=\bfseries\large]}
+  {\end{tcolorbox}}
+
