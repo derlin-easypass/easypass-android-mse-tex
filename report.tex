@@ -1,4 +1,4 @@
-\documentclass[a4paper,11pt]{article}
+\documentclass[a4paper,oneside,11pt]{book}
 
 %~ language : load french support
 \usepackage[frenchb]{babel} 
@@ -36,26 +36,37 @@
 \usepackage{fancyhdr}
 \usepackage{lastpage}
 
-\newcommand{\instutionfooter}{Master MSE}
+%% header/footer management
 
-%~ header/footer
-\pagestyle{fancy}
-\fancyhead{} % reset
-%~ use this for headrule
-%\renewcommand{\headrulewidth}{0pt}
-%~ use this to have the name of the section in the header
-%\fancyhead[RO,LE]{\slshape \leftmark} 
-%~ use this to have the name of the document in the header
-\makeatletter
-\let\runauthor\@author
-\let\runtitle\@title
-\makeatother
-\fancyhead[RO,LE]{\runauthor, \runtitle} 
+\pagestyle{fancy} % default style = fancy
+\fancyhf{} % reinit
 
-\fancyfoot{} % reset
+% set default header to `1. chapter name`, with hrule
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\fancyhead[R]{\small\itshape\MakeUppercase{\leftmark}}
+% set default footer to <name of school> -> 1/10 
+\usepackage{lastpage}
+\newcommand{\leftfootcontent}{\small\itshape{Master MSE, MobOp}}
+\newcommand{\rightfootcontent}{\thepage\  / \pageref{LastPage}}
 \renewcommand{\footrulewidth}{0.1pt}
-\fancyfoot[L]{\small\itshape{\instutionfooter}}
-\fancyfoot[R]{\thepage\  / \pageref{LastPage}}
+\fancyfoot[R]{\rightfootcontent}
+\fancyfoot[L]{\leftfootcontent}
+
+% set style used by chapter/parts to footer only
+\fancypagestyle{plain}{
+  \renewcommand{\headrulewidth}{0pt}
+   \renewcommand{\footrulewidth}{0.1pt} % default .4pt
+  \fancyhf{}
+  \fancyfoot[R]{\rightfootcontent}
+  \fancyfoot[L]{\leftfootcontent}
+}
+
+% set style empty to nothing
+\fancypagestyle{empty}{
+  \renewcommand{\headrulewidth}{0pt}
+   \renewcommand{\footrulewidth}{0pt} % default .4pt
+  \fancyhf{}
+}
 
 % --------------------------------------------------------------------------
 % TOC
@@ -71,21 +82,34 @@
 % --------------------------------------------------------------------------
 
 \begin{document} 
-% --- title page
-\lltitlepage
-
 
 %--- toc
-\tableofcontents
-\thispagestyle{empty}
-\newpage
+\dominitoc % Initialization of minitoc out of the block !
+{   
+    % in here, no header/footer
+    \pagestyle{empty}
 
+    \lltitlepage
+    \cleardoublepage
+
+    \ULCornerWallPaper{1}{\llwallpaper}
+    \tableofcontents
+    \cleardoublepage
+}
 % ------------------------------------ document
-\ULCornerWallPaper{1}{\llwallpaper}
-\input{parties/introduction.tex}
-\input{parties/analyse.tex}
-\input{parties/conception.tex}
-\input{parties/implementation.tex}
+
+\setcounter{page}{1} % first numbered page
+\chapter{Introduction}\label{chap:intro}
+%\myminitoc
+\input{parties/1-introduction.tex}
+
+\chapter{Présentation}\label{chap:presentation}
+%\myminitoc
+\input{parties/2-presentation.tex}
+
+\chapter{Implémentation}\label{chap:implementation}
+%\myminitoc
+\input{parties/3-implementation.tex}
 
 \end{document}
 

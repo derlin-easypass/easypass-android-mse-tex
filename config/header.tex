@@ -1,10 +1,11 @@
 % !TEX ../report.tex
 
 %~ paper and margins
-\usepackage[tmargin=2.2cm,bmargin=2.2cm,lmargin=2cm,rmargin=2cm]{geometry}
+\usepackage[tmargin=2.2cm,bmargin=2.2cm,lmargin=2.5cm,rmargin=2.5cm]{geometry}
 \setlength{\parindent}{0pt} % no indent
 \setlength{\parskip}{\baselineskip} % bare line between paragraphs
 \setlength{\baselineskip}{2.5pt}
+
 
 %~ section headings : decrease the spaces above and below
 \usepackage{titlesec}
@@ -37,6 +38,60 @@
 
 %~landscape support
 \usepackage{pdflscape}
+
+% --------------------------------------------------------------------------
+% MINITOR
+% --------------------------------------------------------------------------
+
+%% minitoc setup
+\usepackage{minitoc}
+\renewcommand{\mtctitle}{}   % no title
+\setcounter{minitocdepth}{1} % only \section
+\nomtcrule                   % remove default black rules (we will add ours with \myminitoc)
+
+% add gray rules to the minitoc top-bottom
+\newcommand{\myminitoc}{
+    \vspace{-1cm}
+    {\hspace{8mm}\Large\emph{Contenu du chapitre}}
+    {\color{light-gray}\hrule}
+    \minitoc
+    {\color{light-gray}\hrule}
+    \vspace{.5cm}
+}
+% ------------------------------------------------------------------------------
+% Set cool chapter titles
+% ------------------------------------------------------------------------------
+
+%Options: Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
+\usepackage[Bjornstrup]{fncychap}
+\ChTitleVar{\raggedleft \huge\fontfamily{pzc}\selectfont}
+%moins d'espace avant un chapitre
+\makeatletter
+\renewcommand*{\@makechapterhead}[1]{%
+  \vspace*{0\p@}%
+  {\parindent \z@ \raggedright \normalfont 
+    \ifnum \c@secnumdepth >\m@ne
+      \if@mainmatter%%%%% Fix for frontmatter, mainmatter, and backmatter 040920
+        \DOCH
+      \fi
+    \fi
+    \interlinepenalty\@M
+    \if@mainmatter%%%%% Fix for frontmatter, mainmatter, and backmatter 060424
+      \DOTI{#1}%
+    \else%
+      \DOTIS{#1}%
+    \fi
+  }}
+% For the case \chapter*:
+\renewcommand*{\@makeschapterhead}[1]{%
+  \vspace*{0\p@}%
+  {\parindent \z@ \raggedright
+    \normalfont
+    \interlinepenalty\@M
+    \DOTIS{#1}
+    \vskip 40\p@
+  }}
+\makeatother
 
 % --------------------------------------------------------------------------
 % TABLES
