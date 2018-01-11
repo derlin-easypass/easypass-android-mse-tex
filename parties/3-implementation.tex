@@ -1,16 +1,267 @@
 % !TEX ../report.tex
 
-\section{Kotlin et extensions}
-
-L'application est développée en Kotlin (version 1.1.60). Lancé par JetBrains, ce langage est depuis 2017 un langage officiellement supporté par Android. Il possède de nombreux avantages, extensions et simplifications d'écritures.
-
-\subsubsection*{Configuration}
-Via Android Studio, configurer un projet pour Kotlin est très facile: il suffit de convertir une activité Java en Kotlin (menu \guillemets{code > convert Java File to Kotlin file}), l'IDE propose alors de faire les modifications nécessaires dans le script gradle.
+L'application \easypass{} fut développée en Kotlin (version 1.1.60).
 
 
-partie implémentation/détails:
+\section{Composants et structure du projet}
 
-- structure générale: activités, services
-- aspects sécurité et synchronisation
-- styles xml 
-- kotlin tips et difficultés
+L'application est composée de six activités (voir figure \ref{fig:app-structure}). Les deux activités principales sont l'activité présentant la liste des comptes (\code{AccountListActivity}) et l'activité (\code{AccountDetailActivity}) permettant de manipuler un compte (pas utilisée sur tablette). 
+% Sur tablette, \code{AccountListActivity} comprend les fragments de manipulation d'un compte (\emph{two panes}, \code{AccountDetailActivity} n'est pas utilisé).
+
+Nous avons utilisé des fragments dans deux cas: a) dans la \code{LoadingSessionActivity}, où chaque fragment représente une vue dans un \emph{wizard}, b) dans les vues principales afin de pouvoir créer une interface \emph{two-panes} sur tablette.
+
+\includeFigure{1}{app-structure}{Aperçu: activités, navigation et composants principaux}
+
+Le projet est structuré en trois \emph{packages}\footnote{Nous avons favorisé des noms clairs à une arborescence complexe.}:
+
+\begin{itemize}
+\item \code{ch.derlin.easypass} contient toutes les classes liées aux vues (activités, fragments et adapteurs de liste);
+\item \code{ch.derlin.easypass.helper} regroupe des objets statiques/classes implémentant la logique applicative ainsi que des classes réutilisables dans d'autres projets;
+\item \code{ch.derlin.easypass.data} contient les définitions des données (\emph{data classes}) ainsi que le gestionnaire de sérialisation.
+\end{itemize}
+
+\section{Dropbox}
+
+\begin{notepar}{Note}
+Dans sa version V1, l'API Dropbox mettait à disposition des \emph{native SDKs} pour Android, IOS, etc.\footnote{Voir \url{https://www.dropbox.com/developers-v1/sync/sdks/android}.} Le téléchargement et la synchronisation des fichiers étaient entièrement pris en charge, rendant notre travail de développement aisé. Depuis la mise en service de l'API REST V2, ces SDKs ne sont plus disponibles.
+\end{notepar}
+
+Dropbox met à disposition un Java SDK\footnote{url: \url{https://github.com/dropbox/dropbox-sdk-java}.}. Avant de l'utiliser, il faut enregister une nouvelle application dans le panel développeur de Dropbox et obtenir une Apikey. La procédure est gratuire, mais le nombre d'utilisateurs est limité. \\
+Le SDK est moins bien documenté que sa version 1 et n'offre ni SDK, ni un tutoriel spécifique pour Android. Il faut se référer à un exemple officiel sur github et des ressources en lignes.
+
+\subsection{Authentification}
+
+Avant de pouvoir utiliser Dropbox, l'utilisateur doit donner accès à son compte. 
+Le \emph{workflow} d'authentification est de type OAUTH2\footnote{voir \url{https://www.dropbox.com/developers/reference/oauth-guide}}. 
+
+L'authentification est gérée dans \code{StartActivity}, qui est l'activité lancée au démarrage. Cette dernière a pour seul rôle de vérifier si un \emph{token} Dropbox existe. Si tel est le cas, elle lance directement l'activité suivante.
+
+Pour obtenir un nouveau \emph{token}, il faut faire appel à la méthode \code{Auth.startOAuth2Authentication( context, apikey)} du Dropbox SDK, qui lance une activité externe. Si la procédure réussit, nous pouvons récupérer le nouveau \emph{token} dans le \code{onResume} via \code{Auth.getOAuth2Token()} et le stocker dans les préférences. 
+
+Il faut faire cependant attention à deux choses: d'abord, \code{onResume} est appelée dans de nombreux cas, il nous faut donc garder une variable d'état pour savoir si une authentification est en cours. Ensuite, un \emph{token} peut devenir invalide; dans ce cas, tout appel à une méthode de l'API Dropbox retourne une exception et il faut relancer toute l'authentification. 
+
+\subsection{DbxManager}
+
+Le \code{DbxManager} est en charge de la communication avec Dropbox; il maintient également une référence vers la liste des comptes, qui devient accessible à toutes les activités.  
+
+\begin{notepar}{Itérations}
+Nous avons tenté plusieurs approches. Nous présentons rapidement deux d'entre elles.
+\newline\newline
+Dans un premier temps, nous avons voulu implémenté \code{DbxManager} sous forme d'\code{IntentService}. Cela est parfait pour les appels REST, mais signifie qu'on ne peut conserver la liste des comptes vu que ce service est instancié/tué entre chaque appel. De même, un nouveau client dropbox doit être créé à chaque appel...
+\newline\newline
+Nous avons ensuite opté pour un \code{BoundService}. Ce dernier est lancé au démarrage et subsiste tout au long du cycle de vie de l'application. La difficulté est la communication entre le service et les activités. 
+D'abord, chaque activité doit obtenir une référence (via un \code{ServiceConnection}). Ensuite, ce type de service tourne dans le thread principal. Il faut donc mettre en place un système de thread et de \emph{callback}, que nous avons implémenté via des \code{LocalBroadcastListener}. 
+\end{notepar}
+
+Le manager est un objet Kotlin (l'équivalent d'une classe statique en Java).\footnote{Nous prenons le risque que l'instance statique soit tuée par le système, mais c'est également un risque avec un service}. Pour simplifier la gestion des threads et appels asynchrones, nous utilisons des promesses grâce à la librairie \emph{Kovenant}.
+
+\subsubsection*{Kovenant promesses}
+
+Pour communiquer avec Dropbox, il faut d'abord créer un \code{DbxClientV2}. Ce dernier offre ensuite des méthodes simplifiant les appels REST. Chaque appel résultant dans une/des requêtes http, il est nécessaire de travailler à l'extérieur du thread principal...
+
+\emph{Kovenant}\footnote{\url{https://github.com/mplatvoet/kovenant}.} est une librairie Kotlin qui implémente les promesses en Android. Il permet très simplement de déclarer un \emph{task} qui tournera dans un thread séparé et des \emph{callbak} appelés en cas de succès ou d'échec. L'extension \emph{Kovenant-UI} permet également de spécifier que certains callback doivent s'exécuter dans le thread principal. Le principe ressemble beaucoup aux asyncTasks, mais est beaucoup plus léger à coder. 
+
+Toutes les méthodes interagissant avec Dropbox retournent une promesse. Par exemple:
+
+\begin{kotlincode}
+fun listSessionFiles(): Promise<Array<String>, Exception> {
+    val deferred = deferred<Array<String>, Exception>()
+
+    task {
+        // this runs in the background
+        val files = client.files().listFolder("")
+            .entries.map { f -> f.name }.toTypedArray()
+        files.sort()
+        deferred.resolve(files) // pass the result to the callback
+    } fail {
+        // this runs in the background
+        deferred.reject(it) // it is the exception
+    }
+    return deferred.promise
+}
+\end{kotlincode}
+
+Pour appeler cette méthode puis utiliser ses résultats dans le thread principal, on utilise:
+
+\begin{kotlincode}
+DbxManager.listSessionFiles().successUi { files ->
+    // runs in the main thread
+    if(files.isNotEmpty()){
+        // do stuff with the list of files
+    }
+} failUi {
+    // runs in the main thread
+    Toast.makeText(this, "error: ${it}", Toast.LENGTH_LONG).show()
+}    
+\end{kotlincode}
+
+
+\subsection{Synchronisation des sessions}
+
+\paragraph*{Chargement} Les fichiers sessions sont modifiables depuis l'extérieur et l'application android utilise un cache permettant entre autre la consultation offline. Il existe donc de nombreux cas de figures, qui sont présentés dans la figure \ref{fig:sync-decision-tree}.
+
+\includeFigure{.6}{sync-decision-tree}{Chargement d'une session: arbre de décision}
+
+Pour déterminer si le fichier distant est le même que le fichier local, nous utilisons la \code{revision} du fichier, un attribut spécifique à Dropbox. La révision locale est stockée dans les préférences.
+
+\paragraph*{fichier cache} le fichier cache est stocké dans l'espace privé de l'application. Lors d'un téléchargment, ce dernier est simplement écrasé. La mise à jour est plus complexe, car il faut gérer les cas où le téléchargement échoue. Si à ce moment l'utilisateur tue l'application, nous pouvons nous retrouver avec un fichier local incohérent et des modifications non sauvées. 
+
+Pour éviter cela, nous sérialisons la liste de comptes modifiées dans un fichier temporaire, téléversons ce dernier sur Dropbox et seulement lors d'un succès mettons à jour le fichier cache.
+
+\begin{kotlincode}
+fun saveAccounts(): Promise<Boolean, Exception> {
+    val deferred = deferred<Boolean, Exception>()
+    task {
+        val tempFile = "upload-file"
+        // serialize accounts to private file
+        App.appContext.openFileOutput(tempFile, Context.MODE_PRIVATE).use { out ->
+            JsonManager.serialize(accounts!!, out, accounts!!.password)
+        }
+        // upload file to dropbox
+        App.appContext.openFileInput(tempFile).use { `in` ->
+            metadata = client.files()
+                    .uploadBuilder(accounts!!.path)
+                    .withMode(WriteMode.OVERWRITE)
+                    .uploadAndFinish(`in`)
+        }
+        // make changes locally permanent
+        IOUtil.copyStreamToStream(App.appContext.openFileInput(tempFile),
+                App.appContext.openFileOutput(localFileName, Context.MODE_PRIVATE))
+
+        // update current revision
+        prefs.revision = metadata!!.rev
+        deferred.resolve(true) // OK
+    } fail {
+        Timber.d(it)
+        deferred.reject(it)
+    }
+    return deferred.promise
+}
+\end{kotlincode}
+
+À noter que lors d'un téléversement, nous utilisons le flag \code{OVERWRITE}. Cela signifie que le fichier distant est systématiquement écrasé (on ne vérifie pas qu'il n'a pas changé). Il revient à l'utilisateur de s'assurer qu'il ne fait pas de modifications concurrentes depuis deux outils différents de la suite \easypass.
+
+\section{Sécurité}
+
+\subsection{(Dé)chiffrement des sessions}
+
+L'objet \code{JsonManager} offre les méthodes relatives au (dé)chiffrement.
+
+Lire/écrire la liste des comptes se fait en deux étapes: 1) lire et déchiffrer le fichier crypté, 2) convertir le JSON en objets Kotlin.
+
+Pour chiffrer/déchiffrer, nous utilisons la librairie \emph{Not Yet Commons SSL}\footnote{\url{https://mvnrepository.com/artifact/ca.juliusdavies/not-yet-commons-ssl}}, une implémentation Java compatible avec openSSL. \\
+Pour lire/écrire des fichiers JSON, nous recourrons à l'excellente librairie gson\footnote{\url{https://github.com/google/gson}} développée par Google. Parmi les avantages, elle se charge du mapping entre une classe et un objet JSON. Elle met aussi à disposition des annotations telles que \code{@Expose} pour contrôler quels attributs doivent être sérialisés et \code{@SerializedName} pour spécifier le nom de la propriété JSON (voir la classe \code{Accounts} dans le fichier \code{datatypes.tk} pour un exemple). 
+
+\subsection{Caching du master password}
+
+Pour rendre l'application plus agréable, nous permettons aux utilisateurs d'utiliser leurs \emph{fingerprints} ou un \emph{pattern} pour déchiffrer une session. Cette partie est prise en charge un  objet Kotlin, \code{CachedCredentials}.
+
+% TODO
+\begin{notepar}{}
+    Cette partie fut l'une des plus compliquée à comprendre/implémenter. Nous n'avons pas trouvé beaucoup d'exemples probants et avons dû faire beaucoup d'essais pour saisir tous les fonctionnements et surtout cas spéciaux. Au final, nous pensons avoir une implémentation satisfaisante.
+\end{notepar}
+
+\paragraph*{Principe}
+Notre approche est d'utiliser un clé de cryptographie privée\footnote{Nous avons choisi d'utiliser l'algorithme AES également pour cette partie, donc nous n'avons besoin que d'une clé.} pour chiffrer le mot de passe, puis de stocker le résultat chiffré dans les préférences. Sur Android, les clés sont stockées dans un \emph{keystore} et sont protégées par un \emph{keyguard}: il est nécessaire de les dévérouiller en utilisant la même méthode que pour l'écran de veille. À noter que cette technique est donc indisponible si l'écran de veille n'est pas protégé (utilisation du \emph{swipe} par exemple).
+
+La première fois que l'utilisateur souhaite mettre son mot de passe en cache, il faut donc: a)  créer un \emph{keystore} afin de stocker des paires de clés de cryptographie sur le device, b) générer une clé. Ces mêmes clés peuvent  être utilisées tant que le mode de verrouillage n'a pas été modifié (ou que les empreintes digitales n'ont pas été modifiées (ajout, suppression, ...)).
+
+Les procédures de chiffrement et déchiffrement sont ensuite similaires:
+
+\begin{enumerate}
+    \item Initialiser/ouvrir le \emph{keystore};
+    \item Récupérer la clé privée;
+    \item Créer un \emph{cypher} avec l'algorithme (ici AES) et l'opération (encrypt/decrypt) souhaités;
+    \item Initialiser le \emph{cypher} avec la clé privée;
+    \item Effectuer le chiffrement/déchiffrement;
+\end{enumerate}
+
+Lors du chiffrement, le \emph{cypher} nous retourne un \code{byte[]} ainsi que l'IV, qui est nécessaire pour le déchiffrement. Nous stockons ensuite ces deux informations dans les préférences privées sous la forme: \code{base64(IV),base64(encrypted)}.
+
+\paragraph*{Déverouillage de la clé} Lors de l'utilisation d'une clé, le système peut lancer une exception de type \code{UserNotAuthenticatedException}\footnote{Nous avons trouvé dommage que le système n'offre aucune méthode pour tester si l'utilisateur est authentifié... Le seul moyen est d'essayer et de \emph{catcher} l'exception!} si l'utilisateur n'a pas déverouillé le keyguard depuis un certain temps (configurable, 30 secondes dans notre cas). 
+
+Dans ce cas, il faut lancer une activité système:
+
+\begin{kotlincode}
+// in CachedCredentials
+fun getAuthenticationIntent(ctx: Context, requestCode: Int, 
+    title: String? = null, description: String? = null): Intent? =
+    (ctx.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).
+        .createConfirmDeviceCredentialIntent(null, null)
+
+
+// in LoadingSessionActivity#PasswordFragment
+private fun showAuthenticationScreen(requestCode: Int) {
+    val intent = CachedCredentials.getAuthenticationIntent(activity, requestCode)
+    if (intent != null) {
+        // ask the system to authenticate the user
+        startActivityForResult(intent, requestCode)
+    } else {
+        // keyguard not secure (i.e. lock screen not secured),
+        // so the keyguard is not available...
+    }
+}
+\end{kotlincode}
+
+Si le résultat de l'activité est positif (\code{Activity.RESULT\_OK}), on peut rappeler la méthode ayant lancé l'exception.
+
+Une autre exception à prendre en compte est \code{KeyPermanentlyInvalidatedException}, qui arrive quand l'utilisateur a modifié la méthode de verrouillage de l'écran ou changé ses fingerprints. Dans ce cas, il faut supprimer la clé et en générer une nouvelle.
+
+\paragraph*{Implémentation} Nous invitons le lecteur à consulter le code du \code{CachedCredentials} pour plus de détails. Ce dernier est bien documenté et offre également des liens vers des ressources externes.
+
+\subsection{SecureActivity}
+
+L'application affiche des informations sensibles. De ce fait, nous avons ajouté deux mécanismes de sécurité:
+\begin{enumerate}
+    \item les activités sensibles sont marquées comme \emph{secure} pour interdire les \emph{screenshots} et demander au système de ne pas afficher de \emph{preview} dans la vue \emph{recent};
+    \item l'application revient à l'écran de \emph{login} si elle est restée trop longtemps en \emph{background}.
+\end{enumerate}
+
+
+Pour cela, les activités \code{AccountListActivity} et \code{AccountListActivity} étendent la classe générique \code{SecureActivity}. Cetter dernière met les flags de sécurité dans le \code{onCreate} (point 1):
+
+\begin{kotlincode}
+window.setFlags(WindowManager.LayoutParams.FLAG_SECURE,
+    WindowManager.LayoutParams.FLAG_SECURE);
+\end{kotlincode}
+
+Pour le point 2), il n'existe pas de moyen simple de détecter depuis quand l'activité est dans le background. Nous avons donc utilisé une variable statique qui est mise à jour avec le timestamp courant dans \code{onPause}. Dans le \code{onResume}, on détermine si plus de 5 minutes se sont passés. Le cas échéant, nous essayons d'utiliser la clé privée et redémarrons si l'exception de type \code{UserNotAuthenticatedException} est lancée:
+
+\begin{kotlincode}
+@CallSuper
+override fun onPause() {
+    super.onPause()
+    // record when we went in background
+    lastActiveTime = System.currentTimeMillis()
+}
+
+@CallSuper
+override fun onResume() {
+    super.onResume()
+    lastActiveTime?.let {
+        if (System.currentTimeMillis() - it > secureTimeoutMillis && 
+                shouldAskCredentials()){
+            // more than 5 minutes AND keyguard not secure --> restart
+            backToLoadingScreen()
+        }
+    }  
+}
+\end{kotlincode}
+
+\section{Autre}
+
+% \section{Kotlin et extensions}
+
+% L'application est développée en Kotlin (version 1.1.60). Lancé par JetBrains, ce langage est depuis 2017 un langage officiellement supporté par Android. Il possède de nombreux avantages, extensions et simplifications d'écritures.
+
+% \subsubsection*{Configuration}
+% Via Android Studio, configurer un projet pour Kotlin est très facile: il suffit de convertir une activité Java en Kotlin (menu \guillemets{code > convert Java File to Kotlin file}), l'IDE propose alors de faire les modifications nécessaires dans le script gradle.
+
+
+
+% partie implémentation/détails:
+
+% - structure générale: activités, services
+% - aspects sécurité et synchronisation
+% - styles xml 
+% - kotlin tips et difficultés

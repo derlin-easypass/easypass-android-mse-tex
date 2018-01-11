@@ -117,10 +117,16 @@
 % --------------------------------------------------------------------------
 % MINTED
 % --------------------------------------------------------------------------
-   
+
+% usage:
+%    \captionof{listing}{exemple de promesses}\label{lst:ex_promesses}}
+% !! surround with {}
+\usepackage{caption}
+
+
  \usepackage[outputdir="out"]{minted}
  \usemintedstyle{github}
- 
+
  \newminted{prolog}{
      fontsize=\small, 
      xleftmargin=2mm,
@@ -139,6 +145,20 @@
       bgcolor=white,
       fontsize=\small
  }
+
+ \newminted{kotlin}{ 
+  xrightmargin=2mm, 
+  xleftmargin=2mm, 
+  bgcolor=white,
+  fontsize=\small
+}
+
+ \newminted{bash}{ 
+  xrightmargin=2mm, 
+  xleftmargin=2mm, 
+  bgcolor=white,
+  fontsize=\small
+}
  
  % repeat the command, since the minted package changes that
  \makeatletter 
@@ -189,8 +209,8 @@
 %~ source: http://mirror.switch.ch/ftp/mirror/tex/macros/latex/contrib/tcolorbox/tcolorbox.pdf
 \usepackage{tcolorbox}
 \definecolor{light-gray}{gray}{0.85}
-\definecolor{dark-gray}{gray}{0.10}
+\definecolor{dark-gray}{gray}{0.30}
 \newenvironment{notepar}[1]% 
-  {\begin{tcolorbox}[title={#1},colback=white,colframe=light-gray,coltext=dark-gray,coltitle=dark-gray,fonttitle=\bfseries\large]}
-  {\end{tcolorbox}}
+  {\begin{center}\begin{tcolorbox}[title={#1},width=.95\textwidth,colback=white,colframe=light-gray,coltext=dark-gray,coltitle=dark-gray,fonttitle=\small\bfseries\color{dark-gray}]\small}
+  {\end{tcolorbox}\end{center}}
 
