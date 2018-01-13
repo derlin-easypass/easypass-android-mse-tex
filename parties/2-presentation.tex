@@ -38,147 +38,135 @@ Pour mieux comprendre les mécanismes derrière le chiffrement AES-CBC ainsi que
 
 fonctionnalités et captures aussi sur tablette !
 
-Au premier lancement de l'appliation, l'utilisateur doit configurer l'accès vers son compte dropbox. L'application peut en suite utiliser cet accès pour créer et sauver les sessions de l'utilisateurs. Lors de la première utilisation de l'application, aucune session n'est trouvée. Par défaut, l'application mobile easypass propose à l'utilisateur de créer la session TODO mettre le nom de la session. Elle sera chiffrée par le master password que l'utilisateur doit choisir à cet écran. La suite easypass permet à l'utilisateur de créer et de manipuler des sessions à travers d'autres outils. L'utilisateur peut choisir d'ouvrir un session  différente au même écran.
+Au premier lancement de l'appliation, l'utilisateur doit configurer l'accès vers son compte dropbox voir Fig. \ref{fig:login-dropbox}. L'application peut en suite utiliser cet accès pour créer et sauver les sessions de l'utilisateur. Lors de la première utilisation de l'application, aucune session n'est trouvée voir Fig. \ref{fig:login-dropbox}. Par défaut, l'application mobile easypass propose à l'utilisateur de créer la session TODO mettre le nom de la session. Elle sera chiffrée par le master password que l'utilisateur doit choisir à cet écran. La suite easypass permet à l'utilisateur de créer et de manipuler des sessions à travers d'autres outils. L'utilisateur peut choisir d'ouvrir un session  différente au même écran.
 
-% exemple multiple images horizontal
-% \begin{center}
-% 	\begin{minipage}{.3\textwidth}
-% 		\includeFigure{1}{loading}{Page de chargement.}
-% 	\end{minipage}
-% 	\begin{minipage}{.3\dropbox}
-% 		\includeFigure{1}{login}{Choisir un compte Dropbox.}
-% 	\end{minipage}
-% 	\begin{minipage}{.3\textwidth}
-% 		\includeFigure{1}{choose_master_password}{Créer la session TODO mettre le nom de la session et le Master Password qui la chiffrera.}
-% 	\end{minipage}        
-% \end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{loading}{} % Page de chargement.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{login-dropbox}{} % Choisir un compte Dropbox.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{choose-master-password}{} % Créer la session TODO mettre le nom de la session et le Master Password qui la chiffrera.
+	\end{minipage}        
+\end{center}
 
-A présent, si l'application est relancée, le master password est demandé afin de déchiffrer la session TODO add fig. Le master password doit être compliqué afin de garantir la sécurité de l'application. Afin que l'utilisateur n'ait pas besoin de le rentrer à chaque utilisation, il est possible de le mettre en cache en cochant la case remember. L'utilisateur peut utiliser les méthodes d'authifications fournies par Android (modèle, empreinte, etc). L'utilisateur peut choisir d'ouvrir une session différente. 
+A présent, si l'application est relancée, le master password est demandé afin de déchiffrer la session TODO add fig. Le master password doit être compliqué afin de garantir la sécurité de l'application. Afin que l'utilisateur n'ait pas besoin de le rentrer à chaque utilisation, il est possible de le mettre en cache en cochant la case remember. L'utilisateur peut utiliser les méthodes d'authentifications fournies par Android (modèle, empreinte, etc). L'utilisateur peut choisir d'ouvrir une session différente. 
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{Loading}{Page de chargement.}
-%	\end{minipage}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{TODO}{Ouvre la session TODO mettre le nom de la session (ou une autre session selectionée par l'utilisateur) à l'aide du Master Password.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{loading}{} % Page de chargement.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{login}{} % Ouvre la session TODO mettre le nom de la session (ou une autre session selectionée par l'utilisateur) à l'aide du Master Password.
+	\end{minipage}        
+\end{center}
 
-La vue principale ou l'activité principale affiche la liste de tous les comptes de l'utilisateur TODO add fig. Ils sont répertoriés par un Nom unique. L'utilisateur peut ajouter un nouveau compte grâce au bouton flottant.Différentes informations peuvent être spécifiées au moment de la création du compte ainsi que le mot de passe. L'application \easypass{} propose également de générer un password aléatoire selon différents critères. 
+La vue principale ou l'activité principal affiche la liste de tous les comptes de l'utilisateur TODO add fig. Ils sont répertoriés par un Nom unique. L'utilisateur peut ajouter un nouveau compte grâce au bouton flottant.Différentes informations peuvent être spécifiées au moment de la création du compte ainsi que le mot de passe. L'application \easypass{} propose également de générer un password aléatoire selon différents critères. 
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Exemple d'une liste contenant TODO comptes.}
-%	\end{minipage}
-%	\begin{minipage}{.3\dropbox}
-%		\includeFigure{1}{TODO}{Création d'un nouveau compte.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Générer un mot de passe.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{TODO}{} % Exemple d'une liste contenant TODO comptes.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{new-account}{} % Création d'un nouveau compte.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{password-generator}{} % Générer un mot de passe.
+	\end{minipage}        
+\end{center}
 
 La compte créé apparaît maintenant dans la liste des comptes TODO add fig. Lorsque l'utilisateur sélectionne un compte de la liste un pannel propose différentes actions.
 Différents raccourcis permettent à l'utilisateur de copier les informations principales du compte sans l'ouvrir (Password, Username, Email). Un autre raccourcis permet d'afficher le mot de passe sauvé et de le copier. 
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Exemple d'une liste contenant TODO comptes.}
-%	\end{minipage}
-%	\begin{minipage}{.3\dropbox}
-%		\includeFigure{1}{TODO}{Pannel lorsqu'un compte est sélectionné. Les options sont grisées lorsque les informations sont vides.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Raccourcis permmettant de voir le mot de passe d'un compte.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{liste}{} % Exemple d'une liste contenant TODO comptes.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{liste-edition}{} % Pannel lorsqu'un compte est sélectionné. Les options sont grisées lorsque les informations sont vides.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{password-shortcut}{} % Raccourcis permmettant de voir le mot de passe d'un compte.
+	\end{minipage}        
+\end{center}
 
 Depuis ce pannel, l'utilisateur peut accéder à un nouvel écran et voir ou éditer les détails du compte sélectionné. Il est également possible d'afficher les détails du compte avec en cliquant longtemps sur un compte de la liste.
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{TODO}{Les détails du compte.}
-%	\end{minipage}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{TODO}{Ecran d'édition du compte.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{details}{} % Les détails du compte.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{edition}{} % Ecran d'édition du compte.
+	\end{minipage}        
+\end{center}
 
 Finalement l'utilisateur peut encore supprimer un compte depuis la liste principale. En faisant glisser le compte sur la gauche. Si un compte est supprimé ou modifié, il est possible de revenir en arrière en cliquant sur le bouton Undo.
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{TODO}{Exemple de suppression d'un compte.}
-%	\end{minipage}
-%	\begin{minipage}{.5\textwidth}
-%		\includeFigure{1}{TODO}{Affichage du bouton Undo pour annuler la dernière modification.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{delete}{} % Exemple de suppression d'un compte.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{undo}{} % Affichage du bouton Undo pour annuler la dernière modification.
+	\end{minipage}        
+\end{center}
 
 L'utilisateur peut modifier l'affichage de la liste principale pour trouver plus rapidement les comptes qu'ils cherchent. La liste principale peut être triée par nom ou date de création. Une fonction de recherche est également proposée pour retrouver un compte par son nom, son username ou son email. L'utilisateur peut choisir ses comptes favoris. Ils apparaîtront en haut de la liste. Les comptes favoris sont sauvés dans la session.
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Option de tri de la liste principale.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Option de recherche.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Mettre un compte dans les favoris.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{tri}{} % Option de tri de la liste principale.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{search}{} % Option de recherche.
+	\end{minipage}
+\end{center}
 
 La session ouverte dans l'application est toujours synchronisée avec Dropbox. Dans le cas où le téléphone n'a plus accès à internet, une copie de la session est conservée en locale avec la dernière synchronisation. L'application peut ainsi afficher les comptes mais sans les éditer.
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Chargement de la dernière session locale sauvegardée.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Une icône en rouge est affichée lorsqu'il n'y a plus de réseau.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Les actions d'éditions sont désactivées.}
-%	\end{minipage}        
-%\end{center}
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{local-file}{} % Chargement de la dernière session locale sauvegardée.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{no-network}{} % Une icône en rouge est affichée lorsqu'il n'y a plus de réseau.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{edition-disabled}{} % Les actions d'éditions sont désactivées.
+	\end{minipage}        
+\end{center}
 
 La suite \easypass{} permet de manipuler la session à travers plusieurs applications (Application Java, Ligne de commande, Application mobile). Dans le cas où la session serait modifiée par un autre programme. L'utilisateur peut forcer la synchronisation afin de récupérer les dernières modifications. Cette action est possible grâce au bouton sync.
 
-% exemple 1 figure
-%\includeFigure{.5}{TODO}{Force la synchronisation de la session locale avec la session sauvée sur Dropbox.}
+\includeFigure{.5}{sync}{} % Force la synchronisation de la session locale avec la session sauvée sur Dropbox.
 
 Les paramètres généraux de l'application peuvent être atteint depuis l'écran principale de l'application. Parmis les actions possibles, l'utilisateur peut :
-- Personnaliser la liste de caractères spéciaux utilisés lors de la génération du mot de passe. 
-- Modifier le master password de la session chargée.
-- Retirer le master password du cache.
-- Ouvrir l'application à nouveau avec une autre session.
-- Oublier l'accès au compte Dropbox de l'utilisateur.
-- Effacer le cache de l'application. Notamment la session local utilisé pour faire fonctionner l'application quand le téléphone n'a pas accès au réseau.
 
-% exemple multiple images horizontal
-%\begin{center}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Settings de l'application.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Edition de la liste des caractères spéciaux.}
-%	\end{minipage}
-%	\begin{minipage}{.3\textwidth}
-%		\includeFigure{1}{TODO}{Edition du master password.}
-%	\end{minipage}        
-%\end{center}
+Personnaliser la liste de caractères spéciaux utilisés lors de la génération du mot de passe. 
+Modifier le master password de la session chargée.
+Retirer le master password du cache.
+Ouvrir l'application à nouveau avec une autre session.
+Oublier l'accès au compte Dropbox de l'utilisateur.
+Effacer le cache de l'application. Notamment la session local utilisé pour faire fonctionner l'application quand le téléphone n'a pas accès au réseau.
+
+\begin{center}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{settings}{} % Settings de l'application.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{custom-liste}{} % Edition de la liste des caractères spéciaux.
+	\end{minipage}
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{new_password}{} % Edition du master password.
+	\end{minipage}        
+\end{center}
 
 
 % exemple de référence
-blabla (see Figure \ref{fig:login}) blabla.
+% blabla (see Figure \ref{fig:login}) blabla.
 
 % exemple 1 figure
-\includeFigure{.5}{generate_password}{caption text}
+% \includeFigure{.5}{generate_password}{caption text}
