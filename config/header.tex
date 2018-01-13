@@ -114,15 +114,17 @@
 %~ \grayrule
 \newcommand{\grayrule}{\arrayrulecolor{light-gray}\hdashline\arrayrulecolor{black}}
 
+% captions 
+% change text size and figure label
+\usepackage[labelsep=newline,figurename=FIGURE,justification=centering,font=footnotesize]{caption}
+
 % --------------------------------------------------------------------------
 % MINTED
 % --------------------------------------------------------------------------
 
-% usage:
+% to add captions:
 %    \captionof{listing}{exemple de promesses}\label{lst:ex_promesses}}
-% !! surround with {}
-\usepackage{caption}
-
+% !! surround with {} (see the caption package)
 
  \usepackage[outputdir="out"]{minted}
  \usemintedstyle{github}
