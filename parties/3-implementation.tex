@@ -55,7 +55,18 @@ D'abord, chaque activité doit obtenir une référence (via un \code{ServiceConn
 
 Le manager est un objet Kotlin (l'équivalent d'une classe statique en Java).\footnote{Nous prenons le risque que l'instance statique soit tuée par le système, mais c'est également un risque avec un service}. Pour simplifier la gestion des threads et appels asynchrones, nous utilisons des promesses grâce à la librairie \emph{Kovenant}.
 
-\subsubsection*{Kovenant promesses}
+\subsubsection*{Contexte}
+
+Le \code{DbxManager} (et les classes utilitaires en général) étant de simple objets Kotlin, ils n'ont pas accès au \emph{contexte}, qui est nécessaire pour de nombreuses opérations telles que la manipulation de fichiers.
+
+Nous avons contourné cette limitation en stockant de manière statique le contexte de l'application au démarrage. Android permet en effet d'étendre la classe \emph{Application}; il suffit ensuite de la mentionner dans le \emph{manifest} en ajoutant un attribut \code{name="[class]"} à l'entrée \code{application}.
+
+Notre classe \code{App} sert à mettre à disposition un contexte et également à initialiser les librairies Kovenant et Timber.
+
+À noter que le contexte d'une application est un peu différent du contexte d'une activité: il n'a par exemple pas accès aux vues et ne peut être utilisé pour créer un toast. Il reste cependant utile pour la gestion de fichiers et de préférences.
+
+
+\subsubsection*{Promesses Kovenant}
 
 Pour communiquer avec Dropbox, il faut d'abord créer un \code{DbxClientV2}. Ce dernier offre ensuite des méthodes simplifiant les appels REST. Chaque appel résultant dans une/des requêtes http, il est nécessaire de travailler à l'extérieur du thread principal...
 
@@ -95,6 +106,18 @@ DbxManager.listSessionFiles().successUi { files ->
 }    
 \end{kotlincode}
 
+Les promesses simplifient le threading et la gestion des appels asynchrones, mais ne règlent pas les problèmes de concurrence. Cela est surtout problématique dans la liste principale: l'utilisateur peut épingler et supprimer rapidement des comptes en un clic et chaque action doit être sauvegardée, i.e. le fichier doit être modifié en local et en remote\footnote{Nous voulions d'abord faire en sorte que les modifications distantes soient effectuées en bloc (\emph{bulk actions}), mais le fait que l'utilisateur puisse tuer l'application à n'importe quel moment rend l'implémentation difficile, d'autant plus sans un service.}.
+
+Pour éviter des modifications concurrentes de la liste des comptes, nous avons configuré Kovenant afin qu'au maximum un thread puisse s'exécuter à la fois (voir la classe \code{App}). Ainsi, bien qu'on ne puisse garantir complètement l'ordre d'exécution des actions, cela évite que deux processus fassent une mise à jour distante en même temps.
+
+\begin{kotlincode}
+Kovenant.context {
+    workerContext.dispatcher = buildDispatcher {
+        name = "Kovenant worker thread"
+        concurrentTasks = 1
+    }
+}
+\end{kotlincode}    
 
 \subsection{Synchronisation des sessions}
 
@@ -104,7 +127,7 @@ DbxManager.listSessionFiles().successUi { files ->
 
 Pour déterminer si le fichier distant est le même que le fichier local, nous utilisons la \code{revision} du fichier, un attribut spécifique à Dropbox. La révision locale est stockée dans les préférences.
 
-\paragraph*{fichier cache} le fichier cache est stocké dans l'espace privé de l'application. Lors d'un téléchargment, ce dernier est simplement écrasé. La mise à jour est plus complexe, car il faut gérer les cas où le téléchargement échoue. Si à ce moment l'utilisateur tue l'application, nous pouvons nous retrouver avec un fichier local incohérent et des modifications non sauvées. 
+\paragraph*{Fichier cache} Le fichier cache est stocké dans l'espace privé de l'application. Lors d'un téléchargment, ce dernier est simplement écrasé. La mise à jour est plus complexe, car il faut gérer les cas où le téléchargement échoue. Si à ce moment l'utilisateur tue l'application, nous pouvons nous retrouver avec un fichier local incohérent et des modifications non sauvées. 
 
 Pour éviter cela, nous sérialisons la liste de comptes modifiées dans un fichier temporaire, téléversons ce dernier sur Dropbox et seulement lors d'un succès mettons à jour le fichier cache.
 
@@ -225,7 +248,7 @@ window.setFlags(WindowManager.LayoutParams.FLAG_SECURE,
     WindowManager.LayoutParams.FLAG_SECURE);
 \end{kotlincode}
 
-Pour le point 2), il n'existe pas de moyen simple de détecter depuis quand l'activité est dans le background. Nous avons donc utilisé une variable statique qui est mise à jour avec le timestamp courant dans \code{onPause}. Dans le \code{onResume}, on détermine si plus de 5 minutes se sont passés. Le cas échéant, nous essayons d'utiliser la clé privée et redémarrons si l'exception de type \code{UserNotAuthenticatedException} est lancée:
+Pour le point 2), il n'existe pas de moyen simple de détecter depuis quand l'activité est dans le background. Nous avons donc utilisé une variable statique qui est mise à jour avec le timestamp courant dans \code{onPause} des activités sensibles\footnote{Cela signifie que si nous sommes dans les Settings, le \guillemets{redémarrage} se fera lorsqu'on retourne à la liste des comptes.}. Dans le \code{onResume}, on détermine si plus de 5 minutes se sont passées. Le cas échéant, nous essayons d'utiliser la clé privée et redémarrons si l'exception de type \code{UserNotAuthenticatedException} est lancée:
 
 \begin{kotlincode}
 @CallSuper
@@ -248,7 +271,135 @@ override fun onResume() {
 }
 \end{kotlincode}
 
+\section{Kotlin tricks}
+
+Kotlin est un langage puissant qui permet beaucoup de simplifications. Cette section présente rapidement certains \emph{tips} Kotlin que nous avons utilisé.
+
+\paragraph*{Experimental extensions} Les extensions expérimentales\footnote{Voir \url{https://kotlinlang.org/docs/tutorials/android-plugin.html}.} de Kotlin doivent être activées dans \code{build.gradle}:
+
+\begin{javacode}
+apply plugin: "org.jetbrains.kotlin.android.extensions"
+androidExtensions {
+    experimental = true
+} 
+apply plugin: "kotlin-android-extensions"
+\end{javacode}
+
+Elles mettent à disposition les fonctionnalités suivantes:
+\begin{itemize}
+    \item View binding: cette extension expose les vues du layout rendant \code{findViewById} inutile. Les variables sont nommées selon les identifiants \code{R.id.nomVue} devient \code{nomVue} dans le code de l'activité; 
+    \item View caching: les vues accédées via le \emph{data binding} sont mises en cache afin de minimiser les appels à \code{findViewById}, ce qui améliore les performances;
+    \item Parcelable support: il est possible de rendre une classe \emph{parcelable} en l'annotant avec \code{@Parcelable} et en la faisant hériter de \code{Parcelable}. Une implémentation sera générée automatiquement (voir la classe \code{Account}); 
+\end{itemize}
+
+\paragraph*{Coroutines} \emph{Anko Coroutines} est un moyen agréable de créer rapidement des \code{asyncTasks}. Nous l'avons utilisée dans les premières itérations de l'application, avant de découvrir les promesses \emph{Kovenant}. Voici un exemple d'utilisation:
+
+\begin{kotlincode}
+async(UI) {
+    val data: Deferred<Data> = bg {
+    // runs in the background
+    getData()
+    }
+
+    // this code is executed on the UI thread
+    showData(data.await()) // call await to wait for the results
+}
+\end{kotlincode}
+
+
+\paragraph*{Extension functions} Kotlin permet de définir des nouvelles fonctions pour une classe particulière. Cela est particulièrement utile pour ajouter des méthodes disponibles pour toutes les activités. Le fichier \code{helper.MiscUtils} utilise beaucoup ce mécanisme. En voici un exemple:
+
+\begin{kotlincode}
+/** return the root view of a given activity, useful for showing snackbars */
+fun Activity.rootView(): View = findViewById(android.R.id.content)
+\end{kotlincode}
+
+\paragraph*{Propriétés} Les propriétés sont des variables pour lesquelles nous définissons explicitement les \emph{getter/setter}. Cela permet par exemple de simplifier grandement la manipulation des préférences. La classe \code{helper.Preferences} est définie ainsi:
+
+\begin{kotlincode}
+class Preferences(context: Context = App.appContext) {
+
+    private val PREFERENCES_FILENAME = "ch.derlin.easypass.preferences"
+    val sharedPrefs = context.getSharedPreferences(
+                        PREFERENCES_FILENAME, Context.MODE_PRIVATE)
+    var revision: String?
+        get() = sharedPrefs.getString("revision", null)
+        set(value) = sharedPrefs.edit().putString("revision", value).apply()
+                
+    var keysoreInitialised: Boolean
+        get() = sharedPrefs.getBoolean("keystore_init", false)
+        set(value) = sharedPrefs.edit().putBoolean("keystore_init", value).apply()
+
+    // etc. 
+}
+\end{kotlincode}
+
+Modifier une préférence revient donc à assigner une variable, par exemple:
+
+\begin{kotlincode}
+Preferences().revision = null
+\end{kotlincode}
+
+\paragraph*{lazyness} Le client Dropbox dans \code{DbxManager} est défini comme \emph{lazy}. Cela permet de l'instancier uniquement lors du premier usage:
+
+\begin{kotlincode}
+val client: DbxClientV2 by lazy {
+    val token = Preferences(App.appContext).dbxAccessToken
+    val config = DbxRequestConfig.newBuilder("Easypass/2.0").build()
+    DbxClientV2(config, token)
+}
+\end{kotlincode}
+
+%\subsection{Timber}
+
+
+\section{Design}
+
+Nous avons passé un certain temps à \emph{styler} l'application afin de lui donner une allure agréable et conforme aux guidelines Material Design. Nous avons également modifier le style de base à certains endroits et découvert ainsi plus en détail comment les styles fonctionnenent.
+
+\paragraph*{Librairies} La librairie \code{com.android.support} met à disposition de nombreux composants. Nous en avons utilisé trois:
+\begin{enumerate}
+    \item \code{appcompat} (v7), qui \guillemets{\emph{adds support for the Action Bar user interface design pattern}}\footnote{source: \url{https://developer.android.com/topic/libraries/support-library/packages.html}};
+    \item \code{recyclerview} permet d'utiliser des \code{RecyclerView} pour les listes, ce qui améliore les performances;
+    \item \code{design} offre des composants du Material Design (fab, cards, etc.) ainsi que des styles qui le respectent.
+\end{enumerate}
+
+\paragraph*{Styles} Toutes nos activités et dialogues étendent des classes \code{AppCompat} et héritent du style défini dans le \emph{manifest}: \code{AppTheme.NoActionBar}. Ce dernier hérite lui-même de \code{Theme.AppCompat.Light. DarkActionBar}.
+
+Les styles et couleurs en Android peuvent se gérer un peu à la manière du CSS et sont très puissants. Mais tout comme le CSS, il est important d'éviter pour cela de noter en dur des propriétés visuelles dans les layouts. Ainsi, nous avons tenté de définir toutes les couleurs, etc. via des styles et de les appliquer aux composants concernés via l'attribut \code{style="@style/NomDuStyle"}. Nous avons également essayé de hiérarchiser nos styles pour éviter des répétitions.
+
+\paragraph*{Couleurs} Les couleurs principales (notamment \code{colorPrimary}, \code{colorPrimaryDark} et \code{colorAccent}) sont définies dans le style principal. Il est aussi possible de changer la couleur du texte et du background, ainsi que les effets \emph{ripple}. Pour certains attributs, il est nécessaire de préfixer le nom de l'item par \code{android:} pour que cela soit pris en compte.
+
+\begin{xmlcode}
+<style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+    <!-- Main colors -->
+    <item name="colorPrimary">@color/colorDarkGrey</item>
+    <item name="colorPrimaryDark">@color/colorDarkerGrey</item>
+    <item name="colorAccent">@color/colorReddy</item>
+    <!-- Ripple color-->
+    <item name="colorControlHighlight">@color/colorLightGrey</item>
+    <!-- Main text color -->
+    <item name="android:textColorPrimary">@color/blacky</item>
+    <!--color of underlines in edittext (not active), etc. -->
+    <item name="android:textColorSecondary">@color/blacky</item>
+
+    <!-- ... etc. ... -->
+</style>
+\end{xmlcode}
+
+\paragraph*{Références} Pour se référer à une couleur depuis un layout, nous avons systématiquement utilisé une référence. Une référence est déclarée avec la syntaxe \code{?attr} ou \code{?android:attr} et permet notamment d'éviter de noter en dur des couleurs. L'avantage est que nous pouvons à tout moment décider de changer les couleurs principales dans le fichier \code{style} et toutes les interfaces seront mises à jour automatiquement.
+
 \section{Autre}
+
+\subsection{BottomSheet}
+
+\subsection{SwipeToDelete}
+
+\subsection{Support tablette}
+
+\subsection{Slides d'introduction}
+% \paragraph*{Autre} Pour appliquer un style particulier à un élément du layout, on peut utiliser l'attribut \code{style}. Si le but est uniquement de changer le style du texte, il est préférable d'utiliser \code{android:textAppearance="..style.."}. 
+
 
 % \section{Kotlin et extensions}
 
