@@ -6,14 +6,20 @@
 Le but d'\easypass{} est de proposer un password manager indépendant de tout serveur externe ou outil particulier. Les mots de passe sont stockés dans un fichier au format JSON. Pour garantir la sécurité de ce dernier, celui-ci est chiffré à l'aide d'un mot de passe selon l'algorithme AES-128-CBC tel qu'implémenté par l'outil opensource OpenSSL. Il est donc possible d'éditer ou récupérer ses mots de passe à l'aide d'une ligne de commande quelconque. \\
 Les outils de la suite \easypass{} sont là pour offrir une couche \emph{user-friendly} à ce mécanisme de base. Ces outils se chargent de chiffrer/déchiffrer le fichier et d'en gérer le contenu (voir figure \ref{fig:schema-easypass}). 
 
-Puisque nous ne faisons que manipuler un fichier, ce dernier peut être synchronisé ou sauvegardé avec de nombreux outils: Google Drive, Dropbox, etc. Sur Android, nous avons rendu l'utilisation de Dropbox obligatoire, mais ce n'est pas le cas sur les versions desktop.
-Afin de rendre accessible le fichier depuis n'importe quel device, nous avons choisi de stocker le fichier sur Dropbox. 
+Puisque nous ne faisons que manipuler un fichier, ce dernier peut être synchronisé ou sauvegardé avec de nombreux outils: Google Drive, Dropbox, etc. Sur Android, nous avons rendu l'utilisation de Dropbox obligatoire, mais ce n'est pas le cas sur les versions desktop. La figure \ref{fig:schema-easypass} résume ce fonctionnement.
 
 \includeFigure{.8}{schema-easypass}{\easypass, architecture générale}
 
 \subsection{Algorithme de chiffrement}
 
-Le principe de \emph{password-based encryption} est de dériver une clé de chiffrement depuis un mot de passe fixe. La sécurité de cette méthode dépend alors de deux choses: a) la longueur du mot de passe, qui détermine également l'entropie de la clé générée, b) la PKDF (\emph{Password Key Derivation Function}), soit l'algorithme utilisé pour dériver une clé du mot de passe. Plus cette fonction prend du temps, plus une attaque brute-force deviendra difficile (manque de temps et de RAM).
+Les données sont chiffrées avec une clé symétrique de type AES 128 bits basée sur un \emph{master password}.
+
+Le principe de \emph{password-based encryption} est de dériver une clé de chiffrement depuis un mot de passe fixe. La sécurité de cette méthode dépend alors de deux choses: 
+\begin{itemize}
+    \item la longueur du mot de passe, qui détermine également l'entropie de la clé générée,
+    \item  la PKDF (\emph{Password Key Derivation Function}), soit l'algorithme utilisé pour dériver une clé du mot de passe.
+\end{itemize}
+Plus la fonction de dérivation prend du temps, plus une attaque brute-force deviendra difficile (manque de temps et de RAM).
 
 \easypass{} utilise un chiffrement qui correspond aux lignes de commande OpenSSL suivante\footnote{AES est notamment utilisé par le gouvernement américain pour chiffrer ses données top secrètes. Ils utilisent cependant la variante 256-bits. Nous utilisons encore 128-bits pour rester compatible avec les autres outils de la suite (mise à jour prévue).}:
 
@@ -36,9 +42,8 @@ Pour mieux comprendre les mécanismes derrière le chiffrement AES-CBC ainsi que
 
 \section{Application Android}
 
-fonctionnalités et captures aussi sur tablette !
-
-Au premier lancement de l'appliation, l'utilisateur doit configurer l'accès vers son compte dropbox voir Fig. \ref{fig:login-dropbox}. L'application peut en suite utiliser cet accès pour créer et sauver les sessions de l'utilisateur. Lors de la première utilisation de l'application, aucune session n'est trouvée voir Fig. \ref{fig:login-dropbox}. Par défaut, l'application mobile easypass propose à l'utilisateur de créer la session easypass.data\_ser. Elle sera chiffrée par le master password que l'utilisateur doit choisir à cet écran. La suite easypass permet à l'utilisateur de créer et de manipuler des sessions à travers d'autres outils. L'utilisateur peut choisir d'ouvrir un session  différente au même écran.
+Au premier lancement de l'application, une petite introduction présente les grands concepts d'\easypass{} (figure \ref{fig:intro}), puis l'utilisateur doit autoriser l'accès vers son compte Dropbox (figure \ref{fig:login-dropbox}).\\ 
+Par défaut, l'application ouvre la session \code{easypass.data\_ser}. Si ce fichier n'existe pas, l'application mobile propose à l'utilisateur de le créer en choisissant le \emph{master password} à utiliser (figure \ref{fig:choose-master-password-withkeyboard}). Ce dernier doit être de minimum trois charactères, mais le plus long est le mieux. À noter qu'il est aussi possible d'ouvrir ou de créer une session différente depuis ce même écran en appuyant sur le bouton d'édition en bas à droite du nom de session courant. Dans ce cas, l'application revient à l'écran de chargement et la nouvelle session devient automatiquement la session par défaut.
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -48,11 +53,11 @@ Au premier lancement de l'appliation, l'utilisateur doit configurer l'accès ver
 		\includeFigure{1}{login-dropbox}{} % Choisir un compte Dropbox.
 	\end{minipage}
 	\begin{minipage}{.3\textwidth}
-		\includeFigure{1}{choose-master-password}{} % Créer la session TODO mettre le nom de la session et le Master Password qui la chiffrera.
+		\includeFigure{1}{choose-master-password-withkeyboard}{} % Créer la session TODO mettre le nom de la session et le Master Password qui la chiffrera.
 	\end{minipage}        
 \end{center}
 
-A présent, si l'application est relancée, le master password est demandé afin de déchiffrer la session voir Fig. \ref{fig:login}. Le master password doit être compliqué afin de garantir la sécurité de l'application. Afin que l'utilisateur n'ait pas besoin de le rentrer à chaque utilisation, il est possible de le mettre en cache en cochant la case remember. L'utilisateur peut utiliser les méthodes d'authentifications fournies par Android (modèle, empreinte, etc). L'utilisateur peut choisir d'ouvrir une session différente. 
+A présent, si l'application est relancée (et que la session existe toujours), le \emph{master password} est demandé afin de déchiffrer le fichier (figure \ref{fig:login}). Le master password doit être compliqué afin de garantir la sécurité de l'application. Afin que l'utilisateur n'ait pas besoin de le rentrer à chaque utilisation, il est possible de le mettre en cache en cochant la case \emph{remember} (figure \ref{fig:login}). L'utilisateur pourra alors utiliser les méthodes d'authentifications fournies par Android (\emph{pattern}, empreinte, etc) à la place du mot de passe. À noter que cette option n'est disponible que sur un téléphone sécurisé: si le téléphone peut être déverouillé sans authentification (\emph{swipe}, \emph{slide up}, etc.), la case à cocher est désactivée (figure \ref{fig:login-no-remember}).
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -60,10 +65,13 @@ A présent, si l'application est relancée, le master password est demandé afin
 	\end{minipage}
 	\begin{minipage}{.3\textwidth}
 		\includeFigure{1}{login}{} % Ouvre la session TODO mettre le nom de la session (ou une autre session selectionée par l'utilisateur) à l'aide du Master Password.
+    \end{minipage}  
+    \begin{minipage}{.3\textwidth}
+		\includeFigure{1}{login-no-remember}{} % Ouvre la session TODO mettre le nom de la session (ou une autre session selectionée par l'utilisateur) à l'aide du Master Password.
 	\end{minipage}        
 \end{center}
 
-L'écran principal de l'application affiche la liste de tous les comptes de l'utilisateur voir Fig. \ref{fig:liste}. Ils sont répertoriés par un Nom unique. L'utilisateur peut ajouter un nouveau compte grâce au bouton flottant.Différentes informations peuvent être spécifiées au moment de la création du compte ainsi que le mot de passe. L'application \easypass{} propose également de générer un password aléatoire selon différents critères. 
+L'écran principal de l'application affiche la liste de tous les comptes de l'utilisateur (figure \ref{fig:liste}). Ils sont répertoriés par un nom unique. L'utilisateur peut ajouter un nouveau compte grâce au bouton flottant (\emph{fab}). Différentes informations peuvent être spécifiées au moment de la création du compte ainsi que le mot de passe. L'application \easypass{} propose également de générer un password aléatoire selon différents critères. 
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -77,7 +85,11 @@ L'écran principal de l'application affiche la liste de tous les comptes de l'ut
 	\end{minipage}        
 \end{center}
 
-La compte créé apparaît maintenant dans la liste des comptes voir Fig. \ref{fig:liste}. Lorsque l'utilisateur sélectionne un compte de la liste un pannel propose différentes actions. Différents raccourcis permettent à l'utilisateur de copier les informations principales du compte sans l'ouvrir (Password, Username, Email) voir Fig. \ref{fig:liste-edition}. Un autre raccourcis permet d'afficher le mot de passe sauvé et de le copier voir Fig. \ref{fig:password-shortcut}. 
+La compte créé apparaît maintenant dans la liste des comptes (figure \ref{fig:liste}). 
+
+Lorsque l'utilisateur clique sur un compte de la liste, un pannel propose différentes actions (figure \ref{fig:liste-edition}). Des raccourcis permettent à l'utilisateur de copier les informations principales du compte sans l'ouvrir (Password, Username, Email). Un autre raccourcis permet d'afficher le mot de passe sauvé (figure \ref{fig:password-shortcut}). 
+
+Depuis ce pannel, l'utilisateur peut accéder à un nouvel écran et voir ou éditer les détails du compte sélectionné. Il est également possible d'afficher les détails du compte en cliquant longtemps sur un compte de la liste.
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -91,7 +103,7 @@ La compte créé apparaît maintenant dans la liste des comptes voir Fig. \ref{f
 	\end{minipage}        
 \end{center}
 
-Depuis ce pannel, l'utilisateur peut accéder à un nouvel écran et voir ou éditer les détails du compte sélectionné. Il est également possible d'afficher les détails du compte avec en cliquant longtemps sur un compte de la liste.
+
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -102,7 +114,7 @@ Depuis ce pannel, l'utilisateur peut accéder à un nouvel écran et voir ou éd
 	\end{minipage}        
 \end{center}
 
-Finalement l'utilisateur peut encore supprimer un compte depuis la liste principale. En faisant glisser le compte sur la gauche voir Fig. \ref{fig:delete}. Si un compte est supprimé ou modifié, il est possible de revenir en arrière en cliquant sur le bouton Undo voir Fig. \ref{fig:undo}.
+Finalement l'utilisateur peut encore supprimer un compte depuis la liste principale en faisant glisser le compte sur la gauche (figure \ref{fig:delete}). Si un compte est supprimé ou modifié, il est possible de revenir en arrière en cliquant sur le bouton Undo affiché sur la snackbar qui apparait en-bas de l'écran (figure \ref{fig:undo}).
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -113,7 +125,9 @@ Finalement l'utilisateur peut encore supprimer un compte depuis la liste princip
 	\end{minipage}        
 \end{center}
 
-L'utilisateur peut modifier l'affichage de la liste principale pour trouver plus rapidement les comptes qu'ils cherchent. La liste principale peut être triée par nom ou date de création voir Fig. \ref{fig:tri}. Une fonction de recherche est également proposée pour retrouver un compte par son nom, son username ou son email voir Fig. \ref{fig:search}. L'utilisateur peut choisir ses comptes favoris. Ils apparaîtront en haut de la liste. Les comptes favoris sont sauvés dans la session.
+L'utilisateur peut modifier l'affichage de la liste principale pour trouver plus rapidement les comptes qu'il cherche. La liste principale peut être triée par nom ou date de création (figure \ref{fig:tri}). Une fonction de recherche est également proposée pour retrouver un compte par un mot-clé (figure \ref{fig:search}). La recherche est effectuée dans tous les champs sauf le mot de passe. 
+
+L'utilisateur peut également marquer des comptes comme favoris (\emph{pinning}). Ils apparaîtront alors systématiquement en haut de la liste. Les comptes favoris sont sauvés dans la session.
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -124,7 +138,7 @@ L'utilisateur peut modifier l'affichage de la liste principale pour trouver plus
 	\end{minipage}
 \end{center}
 
-La session ouverte dans l'application est toujours synchronisée avec Dropbox. Dans le cas où le téléphone n'a plus accès à internet, une copie de la session est conservée en locale avec la dernière synchronisation. L'écran d'accueil propose de charger le fichier local voir Fig. \ref{fig:local-file}. Une icône rouge indique que l'application n'est pas connectée à internet voir Fig. \ref{fig:no-network}. L'application peut ainsi afficher les comptes mais sans les éditer voir Fig. \ref{fig:edition-disabled}.
+La session ouverte dans l'application est toujours synchronisée avec Dropbox. Dans le cas où le téléphone n'a plus accès à internet, une copie de la session est conservée en local avec la dernière synchronisation. L'écran d'accueil propose de charger le fichier local (figure \ref{fig:local-file}). Une icône rouge indique que l'application n'est pas connectée à internet (figure \ref{fig:no-network}). L'application peut ainsi afficher les comptes mais sans les éditer (figure \ref{fig:edition-disabled}). 
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -140,9 +154,18 @@ La session ouverte dans l'application est toujours synchronisée avec Dropbox. D
 
 La suite \easypass{} permet de manipuler la session à travers plusieurs applications (Application Java, Ligne de commande, Application mobile). Dans le cas où la session serait modifiée par un autre programme. L'utilisateur peut forcer la synchronisation afin de récupérer les dernières modifications. Cette action est possible grâce au bouton sync voir Fig. \ref{fig:sync}.
 
-\includeFigure{.3}{sync}{} % Force la synchronisation de la session locale avec la session sauvée sur Dropbox.
+\begin{center}
+    \begin{minipage}{.3\textwidth}
+        \includeFigure{1}{sync}{} % Sync button quand réseau à nouveau up
+    \end{minipage}        
+	\begin{minipage}{.3\textwidth}
+		\includeFigure{1}{auto-sync}{} % Force la synchronisation de la session locale avec la session sauvée sur Dropbox.
+	\end{minipage}
+\end{center}
 
-Les paramètres généraux de l'application peuvent être atteint depuis l'écran principale de l'application  voir Fig. \ref{fig:settings}. 
+Si le téléphone n'a pas de connectivité et que le réseau revient \easypass{} vérifie automatiquement que la session affichée est toujours à jour. Dans le cas contraire, un bouton apparait proposant à l'utilisateur de recharger la session avec la dernière version (figure \ref{fig:auto-sync}).
+
+Les paramètres généraux de l'application peuvent être atteint depuis l'écran principale de l'application  (figure \ref{fig:settings}). 
 
 \begin{center}
 	\begin{minipage}{.3\textwidth}
@@ -158,13 +181,23 @@ Les paramètres généraux de l'application peuvent être atteint depuis l'écra
 
 Parmis les actions possibles, l'utilisateur peut :
 \begin{itemize}
-	\item Personnaliser la liste de caractères spéciaux utilisés lors de la génération du mot de passe voir Fig. \ref{fig:custom-liste}.
-	\item Modifier le master password de la session chargée  Fig. \ref{fig:new-password}.
-	\item Retirer le master password du cache.
-	\item Ouvrir l'application à nouveau avec une autre session.
-	\item Oublier l'accès au compte Dropbox de l'utilisateur.
-	\item Effacer le cache de l'application. Notamment la session local utilisé pour faire fonctionner l'application quand le téléphone n'a pas accès au réseau.
+	\item Personnaliser la liste de caractères spéciaux utilisés lors de la génération du mot de passe (figure \ref{fig:custom-liste});
+	\item Modifier le \emph{master password} de la session chargée (figure \ref{fig:new-password});
+	\item Retirer le \emph{master password} du cache;
+	\item Ouvrir l'application à nouveau avec une autre session;
+	\item Oublier l'accès au compte Dropbox de l'utilisateur;
+	\item Effacer le cache de l'application, notamment la session locale utilisé pour faire fonctionner l'application quand le téléphone n'a pas accès au réseau.
 \end{itemize}
+
+L'application est sécurisée: il n'est pas possible de faire de captures d'écran ou de prévisualiser le contenu de l'application dans la liste des applications récentes (\emph{recents}).
+
+
+Finalement, l'application est également adaptée pour tablettes en mode paysage: la liste principale ainsi que les écrans de détail/éditions sont affichés côte-à-côte, en mode \emph{two panes} (figure \ref{fig:tablet-list}); les écrans de démarrage et de paramètres ont une largeur limitée (figure \ref{fig:tablet-setup}). Le comportement de l'application est le même, excepté une chose: en mode paysage, le panel de raccourcis n'est pas disponible; pour copier une information ou voir le mot de passe, il faut utiliser les fonctions \emph{built-in} d'Android.
+
+
+\includeFigure{.8}{tablet-setup}{} % tablette
+\includeFigure{.8}{tablet-list}{} % tablette
+
 
 % exemple de référence
 % blabla (see Figure \ref{fig:login}) blabla.

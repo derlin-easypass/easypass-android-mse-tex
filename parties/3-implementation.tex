@@ -5,7 +5,7 @@ L'application \easypass{} fut développée en Kotlin (version 1.1.60).
 
 \section{Composants et structure du projet}
 
-L'application est composée de six activités (voir figure \ref{fig:app-structure}). Les deux activités principales sont l'activité présentant la liste des comptes (\code{AccountListActivity}) et l'activité (\code{AccountDetailActivity}) permettant de manipuler un compte (pas utilisée sur tablette). 
+L'application est composée de six activités (voir figure \ref{fig:app-structure}). Les deux activités principales sont l'activité présentant la liste des comptes (\code{AccountListActivity}) et l'activité permettant de manipuler un compte (\code{AccountDetailActivity}, pas utilisée sur tablette). 
 % Sur tablette, \code{AccountListActivity} comprend les fragments de manipulation d'un compte (\emph{two panes}, \code{AccountDetailActivity} n'est pas utilisé).
 
 Nous avons utilisé des fragments dans deux cas: a) dans la \code{LoadingSessionActivity}, où chaque fragment représente une vue dans un \emph{wizard}, b) dans les vues principales afin de pouvoir créer une interface \emph{two-panes} sur tablette.
@@ -342,13 +342,13 @@ Preferences().revision = null
 
 \paragraph*{lazyness} Le client Dropbox dans \code{DbxManager} est défini comme \emph{lazy}. Cela permet de l'instancier uniquement lors du premier usage:
 
-\begin{kotlincode}
+\begin{minted}{kotlin}
 val client: DbxClientV2 by lazy {
     val token = Preferences(App.appContext).dbxAccessToken
     val config = DbxRequestConfig.newBuilder("Easypass/2.0").build()
     DbxClientV2(config, token)
 }
-\end{kotlincode}
+\end{minted}
 
 %\subsection{Timber}
 
@@ -370,7 +370,7 @@ Les styles et couleurs en Android peuvent se gérer un peu à la manière du CSS
 
 \paragraph*{Couleurs} Les couleurs principales (notamment \code{colorPrimary}, \code{colorPrimaryDark} et \code{colorAccent}) sont définies dans le style principal. Il est aussi possible de changer la couleur du texte et du background, ainsi que les effets \emph{ripple}. Pour certains attributs, il est nécessaire de préfixer le nom de l'item par \code{android:} pour que cela soit pris en compte.
 
-\begin{xmlcode}
+\begin{minted}{xml}
 <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
     <!-- Main colors -->
     <item name="colorPrimary">@color/colorDarkGrey</item>
@@ -385,19 +385,71 @@ Les styles et couleurs en Android peuvent se gérer un peu à la manière du CSS
 
     <!-- ... etc. ... -->
 </style>
+\end{minted}
+
+\paragraph*{Références} Pour se référer à une couleur depuis un layout, nous avons systématiquement utilisé une référence. Une référence est déclarée avec la syntaxe \code{?attr} ou \code{?android:attr} (selon qui l'a définie) et permet notamment d'éviter de noter en dur des couleurs. L'avantage est que nous pouvons à tout moment décider de changer les couleurs principales dans le fichier \code{style} et toutes les interfaces seront mises à jour automatiquement.
+
+\paragraph*{Difficultés} Modifier le style peut avoir des effets indésirables, comme \emph{écraser} des comportements par défaut. Il faut alors un certain temps avant de trouver le moyen de le rétablir. 
+
+Par exemple, nous avons utilisé des lignes en gradient à plusieurs endroits de l'application. Il n'y a pas de moyen simple de créer une bordure en Android, il faut créer une \emph{shape} en xml qui peut ensuite être utilisée en fond\footnote{Voir \code{res/drawable/bottom\_border\_gradient.xml}}. Cependant, lorsqu'on ajoute un fond à un élément interactif (boutons, etc.), on \guillemets{écrase} l'effet \emph{ripple}. La solution est de réappliquer l'effet \emph{ripple} au \emph{foreground}:
+
+\begin{xmlcode}
+<Button 
+    android:background="@drawable/bottom_border_gradient"
+    android:foreground="?android:attr/selectableItemBackgroundBorderless" />
 \end{xmlcode}
 
-\paragraph*{Références} Pour se référer à une couleur depuis un layout, nous avons systématiquement utilisé une référence. Une référence est déclarée avec la syntaxe \code{?attr} ou \code{?android:attr} et permet notamment d'éviter de noter en dur des couleurs. L'avantage est que nous pouvons à tout moment décider de changer les couleurs principales dans le fichier \code{style} et toutes les interfaces seront mises à jour automatiquement.
+Un autre exemple est lorsqu'on veut changer la couleur d'un bouton ayant le style \code{Widget.AppCompat .Button.Borderless.Colored}. Cela modifie la couleur du bouton dans tous ses états; il n'est donc plus grisé quand \code{enabled=false}. La solution est de spécifier la couleur du texte dans un xml qui prend en compte l'état du bouton\footnote{On parle alors de \emph{state selector}, voir notamment \code{res/color/btn\_text\_color.xml}.}.
 
 \section{Autre}
 
-\subsection{BottomSheet}
 
-\subsection{SwipeToDelete}
+\subsection{Librairies}
+
+Outre les librairies citées dans les sections précédantes, nous avons utilisé \emph{AppIntro} et \emph{Timber}.
+
+\emph{AppIntro}\footnote{\url{https://github.com/apl-devs/AppIntro}} permet de créer très facilement des slides d'introduction suivant le thème Material Design. 
+
+\emph{Timber}\footnote{\url{https://github.com/JakeWharton/timber}.} est une librairie de logging très légère qui est à la fois extensible et très modulable. Son premier avantage est qu'il n'est pas nécessaire de lui passer un \code{TAG}; elle utilise par défaut le nom de la classe. Sans entrer dans les détails, nous avons configuré \emph{timber} (voir \code{App\#onCreate}) afin de ne loguer qu'en mode \emph{debug} et d'ajouter un string unique (\emph{lucy}) et le numéro de ligne dans le \emph{tag}. 
+
+\begin{kotlincode}
+if (BuildConfig.DEBUG) {
+    Timber.plant(object : DebugTree() {
+        override fun createStackElementTag(element: StackTraceElement): String? =
+
+        "lucy:${super.createStackElementTag(element)}:${element.lineNumber}"
+    })
+    Timber.v("initialised Timber in debug mode")
+}
+\end{kotlincode}    
 
 \subsection{Support tablette}
 
-\subsection{Slides d'introduction}
+Nous avons fait en sorte que l'application soit utilisable sur tablette selon le principe du \emph{split pane}. Pour cela, l'édition et la visualisation des détails sont gérés par des fragments ajoutés soit à l'activité principale (\code{AccountListActivity}, mode tablette), soit à une activité dédiée (\code{AccountDetailActivity}, mode smartphone). 
+
+En mode tablette, les \emph{bottom sheet} ne sont pas très agréables. Nous avons donc ajouté des boutons pour les actions principales et supprimé complètement les \emph{quick actions}: pour copier une information, il est nécessaire de sélectionner le texte désiré. 
+
+Certains écrans, notamment l'écran de \emph{setup} et l'écran des \emph{settings}, ne sont pas très jolis en plein écran. Pour limiter la largeur d'un élément de layout, nous avons utilisé les styles\footnote{\code{ConstraintLayout} permettrait de faire la même chose plus simplement, mais nos containers sont déclarés dans un \code{CoordinatorLayout} afin de gérer l'appBar et le fab...}. Le fichier style par défaut déclare un style \code{LayoutMaxWidth} qui définit un \code{layout\_width} de la taille du parent, tandis que le fichier style dédié aux devices d'une largeur de 900dp ou plus limite la largeur à 500dp:
+
+\begin{xmlcode}
+<!-- in res/values/styles.xml -->
+<style name="LayoutWithMaxWidth">
+    <item name="android:layout_width">match_parent</item>
+</style>
+
+<!-- in res/values-w900dp/styles.xml -->
+<style name="LayoutWithMaxWidth">
+    <item name="android:layout_width">500dp</item>
+</style>
+\end{xmlcode}
+
+Il suffit alors d'appliquer ce style à un container pour que sa largeur soit limitée sur tablette.
+
+\subsection{Animation des listes}
+
+
+%\subsection{SwipeToDelete}
+
 % \paragraph*{Autre} Pour appliquer un style particulier à un élément du layout, on peut utiliser l'attribut \code{style}. Si le but est uniquement de changer le style du texte, il est préférable d'utiliser \code{android:textAppearance="..style.."}. 
 
 
