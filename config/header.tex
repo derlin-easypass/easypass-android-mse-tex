@@ -12,6 +12,7 @@
 \titlespacing\section{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
 \titlespacing\subsection{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
 \titlespacing\subsubsection{0pt}{2pt plus 1pt minus 2pt}{-4pt plus 2pt minus 2pt}
+\titlespacing\paragraph{0pt}{0pt}{12pt plus 2pt minus 2pt}
 
 %~ add default spaces between items in lists
 \usepackage{enumitem}
@@ -129,38 +130,29 @@
  \usepackage[outputdir="out"]{minted}
  \usemintedstyle{github}
 
- \newminted{xml}{
-     fontsize=\small, 
-     xleftmargin=2mm,
-     breaklines
- }
- 
- \newminted{text}{
-     fontsize=\small, 
-     xleftmargin=2mm,
-     breaklines
- }
- 
- \newminted{java}{ 
-      xrightmargin=2mm, 
-      xleftmargin=2mm, 
-      bgcolor=white,
-      fontsize=\small
- }
+%~ use this to change spaces before/after minted environment
+%  \usepackage{etoolbox}
+%  \BeforeBeginEnvironment{minted}{\vspace{-2mm}}
+%  \AfterEndEnvironment{minted}{\vspace{-2mm}}
 
- \newminted{kotlin}{ 
-  xrightmargin=2mm, 
-  xleftmargin=2mm, 
-  bgcolor=white,
-  fontsize=\small
+% default minted style
+\setminted{
+  fontsize=\small, 
+  xleftmargin=0mm,
+  frame=leftline,
+  framesep=5mm,
+  framerule=3pt,
+  rulecolor=\color{gray!20},
+  samepage=false,
+  breaklines
 }
 
- \newminted{bash}{ 
-  xrightmargin=2mm, 
-  xleftmargin=2mm, 
-  bgcolor=white,
-  fontsize=\small
-}
+% new commands: \begin{XXXcode} \end{XXXcode}
+ \newminted{xml}{}
+ \newminted{text}{}
+ \newminted{java}{}
+ \newminted{kotlin}{}
+ \newminted{bash}{}
  
  % repeat the command, since the minted package changes that
  \makeatletter 
