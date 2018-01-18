@@ -34,15 +34,13 @@ Le SDK est moins bien documenté que sa version 1 et n'offre ni SDK, ni un tutor
 Avant de pouvoir utiliser Dropbox, l'utilisateur doit donner accès à son compte. 
 Le \emph{workflow} d'authentification est de type OAUTH2\footnote{voir \url{https://www.dropbox.com/developers/reference/oauth-guide}}. 
 
-L'authentification est gérée dans \code{StartActivity}, qui est l'activité lancée au démarrage. Cette dernière a pour seul rôle de vérifier si un \emph{token} Dropbox existe. Si tel est le cas, elle lance directement l'activité suivante.
-
-Pour obtenir un nouveau \emph{token}, il faut faire appel à la méthode \code{Auth.startOAuth2Authentication( context, apikey)} du Dropbox SDK, qui lance une activité externe. Si la procédure réussit, nous pouvons récupérer le nouveau \emph{token} dans le \code{onResume} via \code{Auth.getOAuth2Token()} et le stocker dans les préférences. 
+L'authentification est gérée dans \code{StartActivity}, qui est l'activité lancée au démarrage. Cette dernière a pour seul rôle de vérifier si un \emph{token} Dropbox existe. Si tel est le cas, elle lance directement l'activité suivante. Pour obtenir un nouveau \emph{token}, il faut faire appel à la méthode \code{Auth.startOAuth2Authentication( context, apikey)} du Dropbox SDK, qui lance une activité externe. Si la procédure réussit, nous pouvons récupérer le nouveau \emph{token} dans le \code{onResume} via \code{Auth.getOAuth2Token()} et le stocker dans les préférences. 
 
 Il faut faire cependant attention à deux choses: d'abord, \code{onResume} est appelée dans de nombreux cas, il nous faut donc garder une variable d'état pour savoir si une authentification est en cours. Ensuite, un \emph{token} peut devenir invalide; dans ce cas, tout appel à une méthode de l'API Dropbox retourne une exception et il faut relancer toute l'authentification. 
 
 \subsection{DbxManager}
 
-Le \code{DbxManager} est en charge de la communication avec Dropbox; il maintient également une référence vers la liste des comptes, qui devient accessible à toutes les activités.  
+Le \code{DbxManager} est en charge de la communication avec Dropbox; il maintient également une référence vers la liste des comptes, qui est ainsi accessible depuis n'importe quelle activité.  
 
 \begin{notepar}{Itérations}
 Nous avons tenté plusieurs approches. Nous présentons rapidement deux d'entre elles.
@@ -59,20 +57,20 @@ Le manager est un objet Kotlin (l'équivalent d'une classe statique en Java).\fo
 
 Le \code{DbxManager} (et les classes utilitaires en général) étant de simple objets Kotlin, ils n'ont pas accès au \emph{contexte}, qui est nécessaire pour de nombreuses opérations telles que la manipulation de fichiers.
 
-Nous avons contourné cette limitation en stockant de manière statique le contexte de l'application au démarrage. Android permet en effet d'étendre la classe \emph{Application}; il suffit ensuite de la mentionner dans le \emph{manifest} en ajoutant un attribut \code{name="[class]"} à l'entrée \code{application}.
+Nous avons contourné cette limitation en stockant de manière statique le contexte de l'application au démarrage. Android permet en effet d'étendre la classe \emph{Application}; il suffit ensuite de la mentionner dans le \emph{manifest} en ajoutant un attribut \code{name="[class]"} à l'entrée \code{application}. 
 
 Notre classe \code{App} sert à mettre à disposition un contexte et également à initialiser les librairies Kovenant et Timber.
 
-À noter que le contexte d'une application est un peu différent du contexte d'une activité: il n'a par exemple pas accès aux vues et ne peut être utilisé pour créer un toast. Il reste cependant utile pour la gestion de fichiers et de préférences.
+À noter que le contexte d'une application est un peu différent du contexte d'une activité: il n'a par exemple pas accès aux vues et ne peut être utilisé pour créer un \emph{toast}. Il reste cependant utile pour la gestion de fichiers et de préférences.
 
 
 \subsubsection*{Promesses Kovenant}
 
 Pour communiquer avec Dropbox, il faut d'abord créer un \code{DbxClientV2}. Ce dernier offre ensuite des méthodes simplifiant les appels REST. Chaque appel résultant dans une/des requêtes http, il est nécessaire de travailler à l'extérieur du thread principal...
 
-\emph{Kovenant}\footnote{\url{https://github.com/mplatvoet/kovenant}.} est une librairie Kotlin qui implémente les promesses en Android. Il permet très simplement de déclarer un \emph{task} qui tournera dans un thread séparé et des \emph{callbak} appelés en cas de succès ou d'échec. L'extension \emph{Kovenant-UI} permet également de spécifier que certains callback doivent s'exécuter dans le thread principal. Le principe ressemble beaucoup aux asyncTasks, mais est beaucoup plus léger à coder. 
+\emph{Kovenant}\footnote{\url{https://github.com/mplatvoet/kovenant}.} est une librairie Kotlin qui implémente les promesses en Android. Il permet très simplement de déclarer un \emph{task} qui tournera dans un thread séparé et des \emph{callbak} appelés en cas de succès ou d'échec. L'extension \emph{Kovenant-UI} permet également de spécifier que certains callbacks doivent s'exécuter dans le thread principal. Le principe ressemble beaucoup aux \emph{asyncTasks}, mais est beaucoup plus léger à coder. 
 
-Toutes les méthodes interagissant avec Dropbox retournent une promesse. Par exemple:
+Toutes les méthodes interagissant avec Dropbox retournent une promesse. En voici un exemple:
 
 \begin{kotlincode}
 fun listSessionFiles(): Promise<Array<String>, Exception> {
@@ -92,7 +90,7 @@ fun listSessionFiles(): Promise<Array<String>, Exception> {
 }
 \end{kotlincode}
 
-Pour appeler cette méthode puis utiliser ses résultats dans le thread principal, on utilise:
+Pour appeler cette méthode, puis utiliser ses résultats dans le thread principal, on utilise:
 
 \begin{kotlincode}
 DbxManager.listSessionFiles().successUi { files ->
@@ -121,7 +119,7 @@ Kovenant.context {
 
 \subsection{Synchronisation des sessions}
 
-\paragraph*{Chargement} Les fichiers sessions sont modifiables depuis l'extérieur et l'application android utilise un cache permettant entre autre la consultation offline. Il existe donc de nombreux cas de figures, qui sont présentés dans la figure \ref{fig:sync-decision-tree}.
+\paragraph*{Chargement} Les fichiers sessions sont modifiables depuis l'extérieur et l'application Android utilise un cache permettant entre autre la consultation offline. Il existe donc de nombreux cas de figures lors du chargement initial, qui sont présentés dans la figure \ref{fig:sync-decision-tree}.
 
 \includeFigure{.6}{sync-decision-tree}{Chargement d'une session: arbre de décision}
 
@@ -129,7 +127,7 @@ Pour déterminer si le fichier distant est le même que le fichier local, nous u
 
 \paragraph*{Fichier cache} Le fichier cache est stocké dans l'espace privé de l'application. Lors d'un téléchargment, ce dernier est simplement écrasé. La mise à jour est plus complexe, car il faut gérer les cas où le téléchargement échoue. Si à ce moment l'utilisateur tue l'application, nous pouvons nous retrouver avec un fichier local incohérent et des modifications non sauvées. 
 
-Pour éviter cela, nous sérialisons la liste de comptes modifiées dans un fichier temporaire, téléversons ce dernier sur Dropbox et seulement lors d'un succès mettons à jour le fichier cache.
+Pour éviter cela, nous sérialisons la liste de comptes modifiées dans un fichier temporaire, téléversons ce dernier sur Dropbox et seulement lors d'un succès mettons à jour le fichier cache et la révision.
 
 \begin{kotlincode}
 fun saveAccounts(): Promise<Boolean, Exception> {
@@ -173,11 +171,11 @@ L'objet \code{JsonManager} offre les méthodes relatives au (dé)chiffrement.
 Lire/écrire la liste des comptes se fait en deux étapes: 1) lire et déchiffrer le fichier crypté, 2) convertir le JSON en objets Kotlin.
 
 Pour chiffrer/déchiffrer, nous utilisons la librairie \emph{Not Yet Commons SSL}\footnote{\url{https://mvnrepository.com/artifact/ca.juliusdavies/not-yet-commons-ssl}}, une implémentation Java compatible avec openSSL. \\
-Pour lire/écrire des fichiers JSON, nous recourrons à l'excellente librairie gson\footnote{\url{https://github.com/google/gson}} développée par Google. Parmi les avantages, elle se charge du mapping entre une classe et un objet JSON. Elle met aussi à disposition des annotations telles que \code{@Expose} pour contrôler quels attributs doivent être sérialisés et \code{@SerializedName} pour spécifier le nom de la propriété JSON (voir la classe \code{Accounts} dans le fichier \code{datatypes.tk} pour un exemple). 
+Pour lire/écrire des fichiers JSON, nous recourrons à l'excellente librairie \emph{gson}\footnote{\url{https://github.com/google/gson}} développée par Google. Parmi les avantages, elle se charge du mapping entre une classe et un objet JSON. Elle met aussi à disposition des annotations telles que \code{@Expose} pour contrôler quels attributs doivent être sérialisés et \code{@SerializedName} pour spécifier le nom de la propriété JSON (voir la classe \code{Accounts} dans le fichier \code{datatypes.tk} pour un exemple). 
 
 \subsection{Caching du master password}
 
-Pour rendre l'application plus agréable, nous permettons aux utilisateurs d'utiliser leurs \emph{fingerprints} ou un \emph{pattern} pour déchiffrer une session. Cette partie est prise en charge un  objet Kotlin, \code{CachedCredentials}.
+Pour rendre l'application plus agréable, nous permettons aux utilisateurs d'utiliser leurs \emph{fingerprints} ou un \emph{pattern} pour déchiffrer une session. Cette partie est implémentée dans un  objet Kotlin, \code{CachedCredentials}.
 
 % TODO
 \begin{notepar}{}
@@ -185,9 +183,9 @@ Pour rendre l'application plus agréable, nous permettons aux utilisateurs d'uti
 \end{notepar}
 
 \paragraph*{Principe}
-Notre approche est d'utiliser un clé de cryptographie privée\footnote{Nous avons choisi d'utiliser l'algorithme AES également pour cette partie, donc nous n'avons besoin que d'une clé.} pour chiffrer le mot de passe, puis de stocker le résultat chiffré dans les préférences. Sur Android, les clés sont stockées dans un \emph{keystore} et sont protégées par un \emph{keyguard}: il est nécessaire de les dévérouiller en utilisant la même méthode que pour l'écran de veille. À noter que cette technique est donc indisponible si l'écran de veille n'est pas protégé (utilisation du \emph{swipe} par exemple).
+Notre approche est d'utiliser un clé de cryptographie privée\footnote{Nous avons choisi d'utiliser l'algorithme AES également pour cette partie, donc nous n'avons besoin que d'une clé.} pour chiffrer le mot de passe, puis de stocker le résultat chiffré dans les préférences. Sur Android, les clés sont stockées dans un \emph{keystore} et sont protégées par un \emph{keyguard}: il est nécessaire de le dévérouiller en utilisant la même méthode que pour l'écran de veille. À noter que cette technique est donc indisponible si l'écran de veille n'est pas protégé (utilisation du \emph{swipe} par exemple).
 
-La première fois que l'utilisateur souhaite mettre son mot de passe en cache, il faut donc: a)  créer un \emph{keystore} afin de stocker des paires de clés de cryptographie sur le device, b) générer une clé. Ces mêmes clés peuvent  être utilisées tant que le mode de verrouillage n'a pas été modifié (ou que les empreintes digitales n'ont pas été modifiées (ajout, suppression, ...)).
+La première fois que l'utilisateur souhaite mettre son mot de passe en cache, il faut donc: a)  créer un \emph{keystore} afin de stocker des paires de clés de cryptographie sur le device, b) générer une clé. Ensuite, cette même clé peut être utilisée tant que le mode de verrouillage n'a pas été modifié (ou que les empreintes digitales n'ont pas été modifiées (ajout, suppression, ...)).
 
 Les procédures de chiffrement et déchiffrement sont ensuite similaires:
 
@@ -196,10 +194,10 @@ Les procédures de chiffrement et déchiffrement sont ensuite similaires:
     \item Récupérer la clé privée;
     \item Créer un \emph{cypher} avec l'algorithme (ici AES) et l'opération (encrypt/decrypt) souhaités;
     \item Initialiser le \emph{cypher} avec la clé privée;
-    \item Effectuer le chiffrement/déchiffrement;
+    \item Effectuer le chiffrement/déchiffrement.
 \end{enumerate}
 
-Lors du chiffrement, le \emph{cypher} nous retourne un \code{byte[]} ainsi que l'IV, qui est nécessaire pour le déchiffrement. Nous stockons ensuite ces deux informations dans les préférences privées sous la forme: \code{base64(IV),base64(encrypted)}.
+Lors du chiffrement, le \emph{cypher} nous retourne un \code{byte[]} ainsi que l'IV, qui est nécessaire pour le déchiffrement (l'IV est le \emph{seed} qui a permis de dériver la clé du mot de passe). Nous stockons ensuite ces deux informations dans les préférences privées sous la forme: \code{base64(IV),base64(encrypted)}.
 
 \paragraph*{Déverouillage de la clé} Lors de l'utilisation d'une clé, le système peut lancer une exception de type \code{UserNotAuthenticatedException}\footnote{Nous avons trouvé dommage que le système n'offre aucune méthode pour tester si l'utilisateur est authentifié... Le seul moyen est d'essayer et de \emph{catcher} l'exception!} si l'utilisateur n'a pas déverouillé le keyguard depuis un certain temps (configurable, 30 secondes dans notre cas). 
 
@@ -236,7 +234,7 @@ Une autre exception à prendre en compte est \code{KeyPermanentlyInvalidatedExce
 
 L'application affiche des informations sensibles. De ce fait, nous avons ajouté deux mécanismes de sécurité:
 \begin{enumerate}
-    \item les activités sensibles sont marquées comme \emph{secure} pour interdire les \emph{screenshots} et demander au système de ne pas afficher de \emph{preview} dans la vue \emph{recent};
+    \item les activités sensibles sont marquées comme \guillemets{secure} pour interdire les \emph{screenshots} et demander au système de ne pas afficher de \emph{preview} dans la vue \emph{Recents};
     \item l'application revient à l'écran de \emph{login} si elle est restée trop longtemps en \emph{background}.
 \end{enumerate}
 
@@ -248,7 +246,7 @@ window.setFlags(WindowManager.LayoutParams.FLAG_SECURE,
     WindowManager.LayoutParams.FLAG_SECURE);
 \end{kotlincode}
 
-Pour le point 2), il n'existe pas de moyen simple de détecter depuis quand l'activité est dans le background. Nous avons donc utilisé une variable statique qui est mise à jour avec le timestamp courant dans \code{onPause} des activités sensibles\footnote{Cela signifie que si nous sommes dans les Settings, le \guillemets{redémarrage} se fera lorsqu'on retourne à la liste des comptes.}. Dans le \code{onResume}, on détermine si plus de 5 minutes se sont passées. Le cas échéant, nous essayons d'utiliser la clé privée et redémarrons si l'exception de type \code{UserNotAuthenticatedException} est lancée:
+Pour le point 2), il n'existe pas de moyen simple de détecter depuis quand une application est dans le background. Nous avons donc utilisé une variable statique qui est mise à jour avec le \emph{timestamp} courant dans le \code{onPause} des activités sensibles\footnote{Cela signifie que si nous sommes dans les Settings, le \guillemets{redémarrage} se fera lorsqu'on retourne à la liste des comptes.}. Dans le \code{onResume}, on détermine si plus de 5 minutes se sont passées. Le cas échéant, nous essayons d'utiliser la clé privée et redémarrons si l'exception de type \code{UserNotAuthenticatedException} est lancée:
 
 \begin{kotlincode}
 @CallSuper
@@ -285,11 +283,11 @@ androidExtensions {
 apply plugin: "kotlin-android-extensions"
 \end{javacode}
 
-Elles mettent à disposition les fonctionnalités suivantes:
+Elles mettent à disposition de nombreuses fonctionnalités:
 \begin{itemize}
-    \item View binding: cette extension expose les vues du layout rendant \code{findViewById} inutile. Les variables sont nommées selon les identifiants \code{R.id.nomVue} devient \code{nomVue} dans le code de l'activité; 
-    \item View caching: les vues accédées via le \emph{data binding} sont mises en cache afin de minimiser les appels à \code{findViewById}, ce qui améliore les performances;
-    \item Parcelable support: il est possible de rendre une classe \emph{parcelable} en l'annotant avec \code{@Parcelable} et en la faisant hériter de \code{Parcelable}. Une implémentation sera générée automatiquement (voir la classe \code{Account}); 
+    \item \emph{View binding}: cette extension expose les vues du layout rendant \code{findViewById} inutile. Les variables sont nommées selon les identifiants (\code{R.id.nomVue} devient \code{nomVue} dans le code de l'activité); 
+    \item \emph{View caching}: les vues accédées via le \emph{data binding} sont mises en cache afin de minimiser les appels à \code{findViewById}, ce qui améliore les performances;
+    \item \emph{Parcelable support}: il est possible de rendre une classe \emph{parcelable} en l'annotant avec \code{@Parcelable} et en la faisant hériter de \code{Parcelable}. Une implémentation sera générée automatiquement (voir la classe \code{Account}); 
 \end{itemize}
 
 \paragraph*{Coroutines} \emph{Anko Coroutines} est un moyen agréable de créer rapidement des \code{asyncTasks}. Nous l'avons utilisée dans les premières itérations de l'application, avant de découvrir les promesses \emph{Kovenant}. Voici un exemple d'utilisation:
@@ -307,7 +305,7 @@ async(UI) {
 \end{kotlincode}
 
 
-\paragraph*{Extension functions} Kotlin permet de définir des nouvelles fonctions pour une classe particulière. Cela est particulièrement utile pour ajouter des méthodes disponibles pour toutes les activités. Le fichier \code{helper.MiscUtils} utilise beaucoup ce mécanisme. En voici un exemple:
+\paragraph*{Extension functions} Kotlin permet de définir des nouvelles fonctions pour une classe particulière. Cela est particulièrement utile pour ajouter des méthodes disponibles pour toutes les activités. Le fichier \code{helper.MiscUtils} utilise ce mécanisme. En voici un exemple:
 
 \begin{kotlincode}
 /** return the root view of a given activity, useful for showing snackbars */
@@ -317,11 +315,11 @@ fun Activity.rootView(): View = findViewById(android.R.id.content)
 \paragraph*{Propriétés} Les propriétés sont des variables pour lesquelles nous définissons explicitement les \emph{getter/setter}. Cela permet par exemple de simplifier grandement la manipulation des préférences. La classe \code{helper.Preferences} est définie ainsi:
 
 \begin{kotlincode}
-class Preferences(context: Context = App.appContext) {
+class Preferences(ctx: Context = App.appContext) {
 
     private val PREFERENCES_FILENAME = "ch.derlin.easypass.preferences"
-    val sharedPrefs = context.getSharedPreferences(
-                        PREFERENCES_FILENAME, Context.MODE_PRIVATE)
+    val sharedPrefs = ctx.getSharedPreferences(PREFERENCES_FILENAME, MODE_PRIVATE)
+    
     var revision: String?
         get() = sharedPrefs.getString("revision", null)
         set(value) = sharedPrefs.edit().putString("revision", value).apply()
@@ -355,11 +353,11 @@ val client: DbxClientV2 by lazy {
 
 \section{Design}
 
-Nous avons passé un certain temps à \emph{styler} l'application afin de lui donner une allure agréable et conforme aux guidelines Material Design. Nous avons également modifier le style de base à certains endroits et découvert ainsi plus en détail comment les styles fonctionnenent.
+Nous avons passé un certain temps à \emph{styler} l'application afin de lui donner une allure agréable et conforme aux guidelines Material Design. Nous avons également modifié le style de base à certains endroits et découvert ainsi plus en détail comment les styles fonctionnenent.
 
 \paragraph*{Librairies} La librairie \code{com.android.support} met à disposition de nombreux composants. Nous en avons utilisé trois:
 \begin{enumerate}
-    \item \code{appcompat} (v7), qui \guillemets{\emph{adds support for the Action Bar user interface design pattern}}\footnote{source: \url{https://developer.android.com/topic/libraries/support-library/packages.html}};
+    \item \code{appcompat} (v7) \guillemets{\emph{adds support for the Action Bar user interface design pattern}}\footnote{source: \url{https://developer.android.com/topic/libraries/support-library/packages.html}};
     \item \code{recyclerview} permet d'utiliser des \code{RecyclerView} pour les listes, ce qui améliore les performances;
     \item \code{design} offre des composants du Material Design (fab, cards, etc.) ainsi que des styles qui le respectent.
 \end{enumerate}
@@ -410,7 +408,7 @@ Outre les librairies citées dans les sections précédantes, nous avons utilis�
 
 \emph{AppIntro}\footnote{\url{https://github.com/apl-devs/AppIntro}} permet de créer très facilement des slides d'introduction suivant le thème Material Design. 
 
-\emph{Timber}\footnote{\url{https://github.com/JakeWharton/timber}.} est une librairie de logging très légère qui est à la fois extensible et très modulable. Son premier avantage est qu'il n'est pas nécessaire de lui passer un \code{TAG}; elle utilise par défaut le nom de la classe. Sans entrer dans les détails, nous avons configuré \emph{timber} (voir \code{App\#onCreate}) afin de ne loguer qu'en mode \emph{debug} et d'ajouter un string unique (\emph{lucy}) et le numéro de ligne dans le \emph{tag}. 
+\emph{Timber}\footnote{\url{https://github.com/JakeWharton/timber}.} est une librairie de logging très légère qui est à la fois extensible et très modulable. Son premier avantage est qu'il n'est pas nécessaire de lui passer un \code{TAG}; elle utilise par défaut le nom de la classe. Sans entrer dans les détails, nous avons configuré \emph{timber} (voir \code{App\#onCreate}) afin de ne loguer qu'en mode \emph{debug} et d'ajouter un string unique (ce qui simplifie le filtrage dans le \emph{logcat}) et le numéro de ligne dans le \emph{tag}. 
 
 \begin{kotlincode}
 if (BuildConfig.DEBUG) {
@@ -431,7 +429,7 @@ En mode tablette, les \emph{bottom sheet} ne sont pas très agréables. Nous avo
 
 Certains écrans, notamment l'écran de \emph{setup} et l'écran des \emph{settings}, ne sont pas très jolis en plein écran. Pour limiter la largeur d'un élément de layout, nous avons utilisé les styles\footnote{\code{ConstraintLayout} permettrait de faire la même chose plus simplement, mais nos containers sont déclarés dans un \code{CoordinatorLayout} afin de gérer l'appBar et le fab...}. Le fichier style par défaut déclare un style \code{LayoutMaxWidth} qui définit un \code{layout\_width} de la taille du parent, tandis que le fichier style dédié aux devices d'une largeur de 900dp ou plus limite la largeur à 500dp:
 
-\begin{xmlcode}
+\begin{minted}{xml}
 <!-- in res/values/styles.xml -->
 <style name="LayoutWithMaxWidth">
     <item name="android:layout_width">match_parent</item>
@@ -441,11 +439,60 @@ Certains écrans, notamment l'écran de \emph{setup} et l'écran des \emph{setti
 <style name="LayoutWithMaxWidth">
     <item name="android:layout_width">500dp</item>
 </style>
-\end{xmlcode}
+\end{minted}
 
 Il suffit alors d'appliquer ce style à un container pour que sa largeur soit limitée sur tablette.
 
-\subsection{Animation des listes}
+\subsection{Liste des comptes}
+
+La liste des comptes utilise un \code{RecyclerView}. 
+
+\paragraph*{Animations} Nous voulions de jolies animations lorsque l'on déplace ou supprime un élément, par exemple lorsqu'on change son statut de favori. 
+
+Nous avons fait de nombreux essais compliqués avant de réaliser que le \emph{support V7} se charge de cela pour nous. La seule condition est de fournir un identifiant unique de type \code{Long} pour chaque item en surchargeant la méthode \code{RecyclerView.Adapter\#getItemId}:
+\begin{minted}{kotlin}
+override fun getItemId(position: Int): Long = filtered[position].uid
+\end{minted}
+
+Nous avons opté pour un identifiant basé sur le \emph{hash} du nom de compte. Ce hash n'est calculé qu'une fois afin qu'il reste le même après une possible modification du nom.
+
+\paragraph*{Swipe} La possibilité de supprimer un compte en le faisant glisser sur le côté fut implémenté via un \code{TouchListener} en s'inspirant d'un code trouvé sur Github (voir \code{SwipeToDeleteCallback}).  
+
+\paragraph*{Gestion des clics} Il existe trois types de clics possibles sur un item: un clic sur l'icône de favori, un clic court, un clic long. Par défaut, le \code{RecyclerView} peut discriminer et réagir aux clics longs et courts, mais ne peut pas les limiter à une partie seulement de la vue... 
+
+\code{AccountAdapter} possède trois propriétés publiques qui correspondent à des \emph{callbacks} pour les trois types de clics. Lorsqu'il prépare une vue, il se charge d'enregistrer des \emph{listeners} sur les différentes parties de la vue (pour autant que les \emph{callbacks} soient définis):
+
+\begin{minted}{kotlin}
+class AccountAdapter(var accounts: MutableList<Account>,
+    defaultComparator: Comparator<Account> = Account.nameComparatorAsc,
+    var textviewCounter: TextView? = null) :
+    RecyclerView.Adapter<AccountAdapter.ViewHolder>() {
+
+    // callbacks 
+    var onClick: ((Account) -> Unit)? = null
+    var onLongClick: ((Account) -> Unit)? = null
+    var onFavoriteClick: ((ViewHolder, Account) -> Unit)? = null
+
+    override fun onBindViewHolder(holder: ViewHolder?, 
+        position: Int, payloads: MutableList<Any>?) {
+
+        // [...] prepare holder 
+        // register listeners
+        holder.view.setOnClickListener { _ -> 
+            onClick?.invoke(item) 
+        }
+        holder.view.setOnLongClickListener {  _ -> 
+            onLongClick?.invoke(item); true 
+        }
+        holder.favoriteIcon.setOnClickListener { _ -> 
+            onFavoriteClick?.invoke(holder, item) 
+        }
+    }
+}
+\end{minted}
+Un gros avantage de ce \emph{design} est que nous pouvons passer la référence vers l'élément cliqué au \emph{callbacks}, ou tout autre information dont il aurait besoin. Par exemple, dans le \code{onFavoriteClick}, il y a de fortes chances qu'il nous faille modifier l'icône affichée; il a donc besoin de la référence vers le \code{ViewHolder} en plus de l'item.
+
+
 
 
 %\subsection{SwipeToDelete}
