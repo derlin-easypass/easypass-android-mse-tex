@@ -114,5 +114,17 @@
 \chapter{Conclusion}\label{chap:conclusion}
 %\myminitoc
 \input{parties/4-conclusion.tex}
+
+% --------
+% unnumbered chapters, alphanumeric numbering of sections
+% \appendix
+\renewcommand{\thechapter}{}
+\renewcommand{\thesection}{\Alph{section}}
+
+\chapter{Annexes}
+\section{Mockups}
+Une série de mockups fut réalisée en tout début de projet, afin de se mettre d'accord sur le design et les fonctionnalités importantes. Elles sont présentées ci-dessous.
+\input{parties/5-annexes.tex}
+
 \end{document}
 
